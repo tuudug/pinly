@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "760649121708",
+    "firebase_url": "https://pinly-43399-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "pinly-43399",
+    "storage_bucket": "pinly-43399.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:760649121708:android:04a6bb0b2370b63fb20409",
+        "android_client_info": {
+          "package_name": "mn.tuudug.pinlyf"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "760649121708-7dlq0grn4t96kjrdocffd3i6kooete1u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDixn_7tmDKobHBNeekqbguEWSDrTEImI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "760649121708-7dlq0grn4t96kjrdocffd3i6kooete1u.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>760649121708-hudk8nddt1d2hiao5vbu7uolkfc5jlrr.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.760649121708-hudk8nddt1d2hiao5vbu7uolkfc5jlrr</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>760649121708-mqvkacjd5sq49rqk3u78slf5srq3o7bs.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAMEppTyMe5tKX3iU4dSRTaJgizcZtbCzE</string>
+	<key>GCM_SENDER_ID</key>
+	<string>760649121708</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>mn.tuudug.pinlyf</string>
+	<key>PROJECT_ID</key>
+	<string>pinly-43399</string>
+	<key>STORAGE_BUCKET</key>
+	<string>pinly-43399.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:760649121708:ios:b6839d228ad55efdb20409</string>
+	<key>DATABASE_URL</key>
+	<string>https://pinly-43399-default-rtdb.asia-southeast1.firebasedatabase.app</string>
+</dict>
+</plist>
