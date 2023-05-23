@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pinly/screens/phone_verify.dart';
 
 import 'widgets/circle.dart';
 
@@ -14,6 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
+        fontFamily: "Sk-Modernist",
         primarySwatch: Colors.purple,
       ),
       home: const MyHomePage(),
@@ -33,7 +35,7 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    Future.delayed(Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 100), () {
       setState(() {
         _opacity = 1.0;
       });
@@ -106,7 +108,6 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                   "Welcome to Pinly",
                   style: TextStyle(
                       color: Colors.white,
-                      fontFamily: "Sk-Modernist",
                       fontWeight: FontWeight.w800,
                       fontSize: 36),
                 ),
@@ -117,7 +118,6 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                   "Ready to have a fun time?",
                   style: TextStyle(
                       color: Colors.white,
-                      fontFamily: "Sk-Modernist",
                       fontWeight: FontWeight.w800,
                       fontSize: 24),
                 ),
@@ -136,7 +136,14 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MyMobilePage(),
+                              ),
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF6F33F8),
                             shape: RoundedRectangleBorder(
@@ -149,8 +156,8 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
                               'Start',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontFamily: "Sk-Modernist",
-                                fontSize: 18),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16),
                             ),
                           ),
                         ),
