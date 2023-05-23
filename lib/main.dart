@@ -28,70 +28,80 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateMixin {
+  double _opacity = 0.0;
 
   @override
   Widget build(BuildContext context) {
+    Future.delayed(Duration(milliseconds: 100), () {
+      setState(() {
+        _opacity = 1.0;
+      });
+    });
     return Scaffold(
       body: Center(
-        child: Stack(
-          children: [
-            const Positioned(
-              top: 0,
-              left: -155,
-              child: Circle(color: Color(0xFF7941FB), radius: 700.0),
-            ),
-            const Positioned(
-              top: -40,
-              left: -105,
-              child: Circle(color: Color(0xFF6F33F8), radius: 600.0),
-            ),
-            const Positioned(
-              top: -120,
-              left: -85,
-              child: Circle(color: Color(0xFF8551FD), radius: 550.0),
-            ),
-            const Positioned(
-              top: -120,
-              left: -40,
-              child: Circle(color: Color(0xFF9566FF), radius: 450.0),
-            ),
-            const Positioned(
-              top: -250,
-              left: -65,
-              child: Circle(color: Color(0xFFA37BFF), radius: 500.0),
-            ),
-            const Positioned(
-              top: -230,
-              left: -17,
-              child: Circle(color: Color(0xFFAE8BFF), radius: 400.0),
-            ),
-            const Positioned(
-              top: -30,
-              left: 85,
-              child: Circle(
-                color: Color(0xFFD3C3FF),
-                radius: 200.0,
+        child: SafeArea(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned(
+                top: 0,
+                child: AnimatedOpacity(
+                  opacity: _opacity, 
+                  duration: const Duration(milliseconds: 2000),
+                  child: Circle(color: Color(0xFF7941FB), radius: 900.0)),
               ),
-            ),
-            const Positioned(
-                top: -75,
-                left: 37,
-                child: Image(
-                  image: AssetImage('assets/logo.png'),
-                  width: 300,
-                  height: 300,
-                )),
-            const Positioned(
-                top: 200,
-                left: 43,
+              Positioned(
+                top: -40,
+                child: AnimatedOpacity(
+                  opacity: _opacity, 
+                  duration: const Duration(milliseconds: 4500),
+                  child: const Circle(color: Color(0xFF6F33F8), radius: 600.0)),
+              ),
+              Positioned(
+                top: -120,
+                child: AnimatedOpacity(
+                  opacity: _opacity, 
+                  duration: const Duration(milliseconds: 3500),
+                  child: const Circle(color: Color(0xFF8551FD), radius: 550.0)),
+              ),
+               Positioned(
+                top: -120,
+                child: AnimatedOpacity(
+                  opacity: _opacity, 
+                  duration: const Duration(milliseconds: 2500),
+                  child: const Circle(color: Color(0xFF9566FF), radius: 450.0)),
+              ),//
+               Positioned(
+                top: -250,
+                child: AnimatedOpacity(
+                  opacity: _opacity, 
+                  duration: const Duration(milliseconds: 1500),
+                  child: const Circle(color: Color(0xFFA37BFF), radius: 500.0)),
+              ),
+               Positioned(
+                top: -230,
+                child: AnimatedOpacity(
+                  opacity: _opacity, 
+                  duration: const Duration(milliseconds: 500),
+                  child: const Circle(color: Color(0xFFAE8BFF), radius: 400.0)),
+              ),//
+              const Positioned(
+                top: -30,
+                child: Circle(
+                  color: Color(0xFFD3C3FF),
+                  radius: 200.0,
+                ),
+              ),
+              const Positioned(
+                  top: 0,
+                  child: Image(
+                    image: AssetImage('assets/logo.png'),
+                    width: 125,
+                    height: 125,
+                  )),
+              const Positioned(
+                top: 250,
                 child: Text(
                   "Welcome to Pinly",
                   style: TextStyle(
@@ -99,84 +109,61 @@ class _MyHomePageState extends State<MyHomePage> {
                       fontFamily: "Sk-Modernist",
                       fontWeight: FontWeight.w800,
                       fontSize: 36),
-                )),
-            const Positioned(
-                top: 350,
-                left: 100,
+                ),
+              ),
+              const Positioned(
+                bottom: 150,
                 child: Text(
-                  "Have a fun time",
+                  "Ready to have a fun time?",
                   style: TextStyle(
                       color: Colors.white,
                       fontFamily: "Sk-Modernist",
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800),
-                )),
-            Positioned(
-              top: 500,
-              left: -5,
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(45.0),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 24),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(60, 32, 60, 32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          primary: const Color(0xFF6F33F8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(45.0),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(60, 32, 60, 32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF6F33F8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.fromLTRB(90, 0, 90, 0),
+                            child: Text(
+                              'Start',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontFamily: "Sk-Modernist",
+                                fontSize: 18),
+                            ),
                           ),
                         ),
-                        child: const Padding(
-                          padding: EdgeInsets.fromLTRB(90, 0, 90, 0),
-                          child: Text(
-                            'LOGIN',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16.0),
-                      const Text(
-                        'OR',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 16.0),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          primary: const Color(0xFF6F33F8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                        ),
-                        child: const Padding(
-                          padding: EdgeInsets.fromLTRB(82, 0, 82, 0),
-                          child: Text(
-                            'SIGN UP',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
+                        const SizedBox(height: 16.0),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
-/*
-Text(
-              'You have pushed the button this many times:',
-              style: TextStyle(
-                  fontFamily: 'Sk-Modernist', fontWeight: FontWeight.w800),
-            ),
-*/
