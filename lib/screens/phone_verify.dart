@@ -33,8 +33,9 @@ class _MyMobilePageState extends State<MyMobilePage> {
               const Padding(
                 padding: EdgeInsets.only(bottom: 8.0),
                 child: Text(
-                  'My Mobile',
+                  'Hi!',
                   style: TextStyle(
+                    color: Colors.deepPurpleAccent,
                     fontSize: 32.0,
                     fontWeight: FontWeight.bold,
                   ),
