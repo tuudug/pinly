@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:pinly/screens/phone_otp.dart';
 
 class MyMobilePage extends StatefulWidget {
   @override
@@ -58,7 +60,13 @@ class _MyMobilePageState extends State<MyMobilePage> {
               ),
               const SizedBox(height: 32.0),
               ElevatedButton(
-                onPressed: () {
+                onPressed: ()  {
+                  Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OtpPage(),
+                              ),
+                            );
                   // Add your logic for the Continue button here
                 },
                 style: ElevatedButton.styleFrom(
