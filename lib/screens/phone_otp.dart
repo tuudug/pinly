@@ -1,12 +1,36 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OtpPage extends StatefulWidget {
+  final String verificationId;
+  const OtpPage({super.key, required this.verificationId});
   @override
   _OtpPageState createState() => _OtpPageState();
 }
 
 class _OtpPageState extends State<OtpPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   String enteredCode = '';
+
+  Future<void> _signInWithPhoneNumber(String smsCode) async {
+    final AuthCredential credential = PhoneAuthProvider.credential(
+      verificationId: widget.verificationId,
+      smsCode: smsCode,
+    );
+
+    try {
+      final user = await _auth.signInWithCredential(credential);
+      if (user.additionalUserInfo?.isNewUser == true) {
+        log("ur a new user!!");
+      } else {
+        log("ur a bro!!!");
+      }
+    } catch (e) {
+      print('Error occurred while signing in: $e');
+    }
+  }
 
   void _addCode(String digit) {
     setState(() {
@@ -14,6 +38,9 @@ class _OtpPageState extends State<OtpPage> {
         enteredCode += digit;
       }
     });
+    if (enteredCode.length == 6) {
+      _signInWithPhoneNumber(enteredCode);
+    }
   }
 
   void _removeCode() {
@@ -40,46 +67,52 @@ class _OtpPageState extends State<OtpPage> {
         elevation: 0,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(36.0),
+            const Padding(
+              padding: EdgeInsets.all(36.0),
               child: Text(
                 'Type in the verification code we’ve just sent to you',
                 style: TextStyle(fontSize: 18.0),
                 textAlign: TextAlign.center,
               ),
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 for (int i = 0; i < 6; i++)
                   AnimatedOpacity(
-                    duration: Duration(milliseconds: 150),
+                    duration: const Duration(milliseconds: 150),
                     opacity: enteredCode.length > i ? 1.0 : 0.5,
                     child: Container(
-                      width: 57.0,
-                      height: 60.0,
+                      width: 47.0,
+                      height: 50.0,
                       decoration: BoxDecoration(
-                        border: Border.all(width: 1.0, color: Color(0xFFBDBDBD)),
+                        border: Border.all(
+                            width: 1.0, color: const Color(0xFFBDBDBD)),
                         borderRadius: BorderRadius.circular(16.0),
-                        color: enteredCode.length > i ? Color(0xFF9B51E0) : Colors.transparent,
+                        color: enteredCode.length > i
+                            ? const Color(0xFF9B51E0)
+                            : Colors.transparent,
                       ),
                       child: Center(
                         child: Text(
                           enteredCode.length > i ? enteredCode[i] : '',
-                          style: TextStyle(fontSize: 32.0, color: Colors.white, fontWeight: FontWeight.w800),
+                          style: const TextStyle(
+                              fontSize: 32.0,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800),
                         ),
                       ),
                     ),
                   ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -97,7 +130,7 @@ class _OtpPageState extends State<OtpPage> {
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -115,7 +148,7 @@ class _OtpPageState extends State<OtpPage> {
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -133,7 +166,7 @@ class _OtpPageState extends State<OtpPage> {
                 ),
               ],
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -152,12 +185,15 @@ class _OtpPageState extends State<OtpPage> {
                 ),
               ],
             ),
-            SizedBox(height: 32.0),
+            const SizedBox(height: 32.0),
             Center(
               child: TextButton(
-                child: Text(
+                child: const Text(
                   'Send again',
-                  style: TextStyle(fontSize: 16.0, color: Color(0xFF8B5CF6), fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                      fontSize: 16.0,
+                      color: Color(0xFF8B5CF6),
+                      fontWeight: FontWeight.w800),
                 ),
                 onPressed: _submitCode,
               ),
@@ -185,7 +221,12 @@ class DialPadButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       iconSize: 24.0,
-      icon: icon != Icons.circle ? Icon(icon) : Text(digit, style: TextStyle(fontSize: 24),),
+      icon: icon != Icons.circle
+          ? Icon(icon)
+          : Text(
+              digit,
+              style: const TextStyle(fontSize: 24),
+            ),
       onPressed: onPressed,
     );
   }

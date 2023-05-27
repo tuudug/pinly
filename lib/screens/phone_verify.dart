@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:pinly/screens/phone_otp.dart';
@@ -8,7 +10,47 @@ class MyMobilePage extends StatefulWidget {
 }
 
 class _MyMobilePageState extends State<MyMobilePage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _phoneNumberController = TextEditingController();
+  String _verificationId = '';
+
+  Future<void> _verifyPhoneNumber() async {
+    verificationCompleted(AuthCredential authCredential) async {
+      await _auth.signInWithCredential(authCredential);
+    }
+
+    verificationFailed(FirebaseAuthException authException) {
+      log('Phone number verification failed. Code: ${authException.code}. Message: ${authException.message}');
+    }
+
+    codeSent(String verificationId, [int? forceResendingToken]) async {
+      _verificationId = verificationId;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OtpPage(verificationId: _verificationId),
+        ),
+      );
+    }
+
+    codeAutoRetrievalTimeout(String verificationId) {
+      // Auto-resolution timed out
+      _verificationId = verificationId;
+    }
+
+    await _auth.verifyPhoneNumber(
+      phoneNumber: '+976${_phoneNumberController.text}',
+      timeout: const Duration(seconds: 30),
+      verificationCompleted: verificationCompleted,
+      verificationFailed: verificationFailed,
+      codeSent: codeSent,
+      codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+    );
+  }
+
+  _onInputChanged(value) {
+    setState(() {});
+  }
 
   @override
   void dispose() {
@@ -28,7 +70,7 @@ class _MyMobilePageState extends State<MyMobilePage> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(32, 168, 32, 32),
+          padding: const EdgeInsets.fromLTRB(32, 64, 32, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -50,27 +92,26 @@ class _MyMobilePageState extends State<MyMobilePage> {
                   color: Colors.grey,
                 ),
               ),
-              const SizedBox(height: 64.0),
+              const SizedBox(height: 32.0),
               TextField(
+                maxLength: 8,
+                onChanged: (value) => {_onInputChanged(value)},
                 controller: _phoneNumberController,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  labelText: 'Phone Number',
+                  labelText: 'Phone Number (+976)',
                 ),
               ),
               const SizedBox(height: 32.0),
               ElevatedButton(
-                onPressed: ()  {
-                  Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => OtpPage(),
-                              ),
-                            );
-                  // Add your logic for the Continue button here
+                onPressed: () => {
+                  if (_phoneNumberController.text.length == 8)
+                    _verifyPhoneNumber()
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: _phoneNumberController.text.length != 8
+                      ? Colors.grey
+                      : Colors.deepPurple,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.0),
                   ),
@@ -80,7 +121,7 @@ class _MyMobilePageState extends State<MyMobilePage> {
                   child: Text(
                     'Continue',
                     style: TextStyle(
-                      fontSize: 20.0,
+                      fontSize: 16.0,
                       color: Colors.white,
                     ),
                   ),
