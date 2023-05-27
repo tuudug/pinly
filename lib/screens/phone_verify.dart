@@ -86,7 +86,7 @@ class _MyMobilePageState extends State<MyMobilePage> {
                 ),
               ),
               const Text(
-                'Please enter your valid phone number. We will send you a 4-digit code to verify your account.',
+                'Please enter your valid phone number. We will send you a 6-digit code to verify your account.',
                 style: TextStyle(
                   fontSize: 16.0,
                   color: Colors.grey,

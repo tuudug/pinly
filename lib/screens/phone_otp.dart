@@ -1,7 +1,11 @@
 import 'dart:developer';
+import 'dart:ffi';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class OtpPage extends StatefulWidget {
   final String verificationId;
@@ -10,9 +14,44 @@ class OtpPage extends StatefulWidget {
   _OtpPageState createState() => _OtpPageState();
 }
 
-class _OtpPageState extends State<OtpPage> {
+class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FlutterSecureStorage storage = new FlutterSecureStorage();
+  final FirebaseFirestore db = FirebaseFirestore.instance;
   String enteredCode = '';
+  bool loading = false;
+  bool disabled = false;
+  String otpStatus = "";
+
+  late AnimationController _controller;
+  late Animation<Offset> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _animation = Tween<Offset>(
+      begin: Offset.zero,
+      end: Offset(0.01, 0.0),
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.elasticOut,
+    ));
+    // Add a status listener to reset the animation
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _controller.reset();
+      }
+    });
+  }
+
+  void shakeWidget() {
+    _controller.reset();
+    _controller.forward();
+  }
 
   Future<void> _signInWithPhoneNumber(String smsCode) async {
     final AuthCredential credential = PhoneAuthProvider.credential(
@@ -21,25 +60,57 @@ class _OtpPageState extends State<OtpPage> {
     );
 
     try {
-      final user = await _auth.signInWithCredential(credential);
-      if (user.additionalUserInfo?.isNewUser == true) {
-        log("ur a new user!!");
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+      final Uuid uuid = Uuid();
+      final String session_id = uuid.v4();
+      final String? user_uid = userCredential.user?.uid;
+      final String? phone_number = userCredential.user?.phoneNumber;
+
+      await storage.write(key: "user_uid", value: user_uid);
+      await storage.write(key: "session_id", value: session_id);
+
+      if (userCredential.additionalUserInfo?.isNewUser == true) {
+        db.collection("users").doc(user_uid).set(<String, dynamic>{
+          "session_id": session_id,
+          "friends": [],
+          "phone_number": phone_number,
+          "uid": user_uid,
+          "username": null,
+        });
       } else {
-        log("ur a bro!!!");
+        db.collection("users").doc(user_uid).update(<String, String>{
+          "session_id": session_id,
+        });
       }
+      setState(() {
+        otpStatus = "SUCCESS";
+      });
     } catch (e) {
+      setState(() {
+        otpStatus = "FAILED";
+      });
       print('Error occurred while signing in: $e');
     }
   }
 
   void _addCode(String digit) {
-    setState(() {
-      if (enteredCode.length < 6) {
-        enteredCode += digit;
+    if (!disabled) {
+      setState(() {
+        if (enteredCode.length < 6) {
+          enteredCode += digit;
+        }
+      });
+      if (enteredCode.length == 6) {
+        setState(() {
+          disabled = true;
+          loading = true;
+        });
+        Future.delayed(const Duration(seconds: 2), () {
+          _failInput();
+        });
+        //_signInWithPhoneNumber(enteredCode);
       }
-    });
-    if (enteredCode.length == 6) {
-      _signInWithPhoneNumber(enteredCode);
     }
   }
 
@@ -47,13 +118,41 @@ class _OtpPageState extends State<OtpPage> {
     setState(() {
       if (enteredCode.isNotEmpty) {
         enteredCode = enteredCode.substring(0, enteredCode.length - 1);
+        setState(() {
+          loading = false;
+        });
       }
     });
   }
 
-  void _submitCode() {
-    // Perform validation or verification with the entered code
-    // Add your logic here
+  void _failInput() {
+    shakeWidget();
+    setState(() {
+      otpStatus = "FAILED";
+      loading = false;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        disabled = false;
+        otpStatus = "";
+        enteredCode = "";
+      });
+    });
+  }
+
+  void _succeedInput() {
+    shakeWidget();
+    setState(() {
+      otpStatus = "SUCCESS";
+      loading = false;
+    });
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        disabled = false;
+        otpStatus = "";
+        enteredCode = "";
+      });
+    });
   }
 
   @override
@@ -81,36 +180,64 @@ class _OtpPageState extends State<OtpPage> {
               ),
             ),
             const SizedBox(height: 16.0),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                for (int i = 0; i < 6; i++)
-                  AnimatedOpacity(
-                    duration: const Duration(milliseconds: 150),
-                    opacity: enteredCode.length > i ? 1.0 : 0.5,
-                    child: Container(
-                      width: 47.0,
-                      height: 50.0,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                            width: 1.0, color: const Color(0xFFBDBDBD)),
-                        borderRadius: BorderRadius.circular(16.0),
-                        color: enteredCode.length > i
-                            ? const Color(0xFF9B51E0)
-                            : Colors.transparent,
-                      ),
-                      child: Center(
-                        child: Text(
-                          enteredCode.length > i ? enteredCode[i] : '',
-                          style: const TextStyle(
-                              fontSize: 32.0,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800),
+            SlideTransition(
+              position: _animation,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  for (int i = 0; i < 6; i++)
+                    AnimatedOpacity(
+                      duration: const Duration(milliseconds: 150),
+                      opacity: enteredCode.length > i ? 1.0 : 0.5,
+                      child: Container(
+                        width: 47.0,
+                        height: 50.0,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                              width: 1.0, color: const Color(0xFFBDBDBD)),
+                          borderRadius: BorderRadius.circular(16.0),
+                          color: otpStatus == ""
+                              ? (enteredCode.length > i
+                                  ? const Color(0xFF9B51E0)
+                                  : Colors.transparent)
+                              : otpStatus == "FAILED"
+                                  ? Colors.red
+                                  : otpStatus == "SUCCESS"
+                                      ? Colors.green
+                                      : Colors.transparent,
                         ),
+                        child: Center(
+                            child: loading == false
+                                ? otpStatus == ""
+                                    ? (Text(
+                                        enteredCode.length > i
+                                            ? enteredCode[i]
+                                            : '',
+                                        style: const TextStyle(
+                                            fontSize: 32.0,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w800),
+                                      ))
+                                    : otpStatus == "FAILED"
+                                        ? (Icon(
+                                            Icons.close,
+                                            color: Colors.white,
+                                          ))
+                                        : (Icon(
+                                            Icons.check,
+                                            color: Colors.white,
+                                          ))
+                                : const Padding(
+                                    padding: EdgeInsets.all(12.0),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 3,
+                                      color: Colors.white,
+                                    ),
+                                  )),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 16.0),
             Row(
@@ -195,7 +322,7 @@ class _OtpPageState extends State<OtpPage> {
                       color: Color(0xFF8B5CF6),
                       fontWeight: FontWeight.w800),
                 ),
-                onPressed: _submitCode,
+                onPressed: () {},
               ),
             ),
           ],
