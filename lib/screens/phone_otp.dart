@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'dart:ffi';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pinly/screens/main_map.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,7 +10,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class OtpPage extends StatefulWidget {
   final String verificationId;
-  const OtpPage({super.key, required this.verificationId});
+  final String phoneNumber;
+  const OtpPage(
+      {super.key, required this.verificationId, required this.phoneNumber});
   @override
   _OtpPageState createState() => _OtpPageState();
 }
@@ -20,8 +23,10 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
   final FirebaseFirestore db = FirebaseFirestore.instance;
   String enteredCode = '';
   bool loading = false;
-  bool disabled = false;
+  bool inputDisabled = false;
+  bool resendBlocked = false;
   String otpStatus = "";
+  late String verificationIdState;
 
   late AnimationController _controller;
   late Animation<Offset> _animation;
@@ -29,6 +34,7 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    verificationIdState = widget.verificationId;
     _controller = AnimationController(
       duration: Duration(milliseconds: 1000),
       vsync: this,
@@ -55,7 +61,7 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
 
   Future<void> _signInWithPhoneNumber(String smsCode) async {
     final AuthCredential credential = PhoneAuthProvider.credential(
-      verificationId: widget.verificationId,
+      verificationId: verificationIdState,
       smsCode: smsCode,
     );
 
@@ -95,7 +101,7 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
   }
 
   void _addCode(String digit) {
-    if (!disabled) {
+    if (!inputDisabled) {
       setState(() {
         if (enteredCode.length < 6) {
           enteredCode += digit;
@@ -103,7 +109,7 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
       });
       if (enteredCode.length == 6) {
         setState(() {
-          disabled = true;
+          inputDisabled = true;
           loading = true;
         });
         _signInWithPhoneNumber(enteredCode);
@@ -130,7 +136,7 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
     });
     Future.delayed(const Duration(seconds: 1), () {
       setState(() {
-        disabled = false;
+        inputDisabled = false;
         otpStatus = "";
         enteredCode = "";
       });
@@ -145,9 +151,35 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
     });
     Future.delayed(const Duration(seconds: 1), () {
       setState(() {
-        disabled = false;
+        inputDisabled = false;
         otpStatus = "";
         enteredCode = "";
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (BuildContext context) {
+          return MainMap();
+        }));
+      });
+    });
+  }
+
+  void _resendCode() async {
+    setState(() {
+      resendBlocked = true;
+    });
+
+    await _auth.verifyPhoneNumber(
+      phoneNumber: widget.phoneNumber,
+      timeout: const Duration(seconds: 30),
+      verificationCompleted: (credential) {},
+      verificationFailed: (error) {},
+      codeSent: (verificationIdResent, [int? forceResendingToken]) {
+        verificationIdState = verificationIdResent;
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {},
+    );
+    Future.delayed(const Duration(seconds: 60), () {
+      setState(() {
+        resendBlocked = false;
       });
     });
   }
@@ -216,11 +248,11 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
                                             fontWeight: FontWeight.w800),
                                       ))
                                     : otpStatus == "FAILED"
-                                        ? (Icon(
+                                        ? (const Icon(
                                             Icons.close,
                                             color: Colors.white,
                                           ))
-                                        : (Icon(
+                                        : (const Icon(
                                             Icons.check,
                                             color: Colors.white,
                                           ))
@@ -312,14 +344,18 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
             const SizedBox(height: 32.0),
             Center(
               child: TextButton(
-                child: const Text(
+                child: Text(
                   'Send again',
                   style: TextStyle(
                       fontSize: 16.0,
-                      color: Color(0xFF8B5CF6),
+                      color: (!resendBlocked)
+                          ? const Color(0xFF8B5CF6)
+                          : Colors.grey,
                       fontWeight: FontWeight.w800),
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  if (!resendBlocked) _resendCode();
+                },
               ),
             ),
           ],

@@ -28,7 +28,10 @@ class _MyMobilePageState extends State<MyMobilePage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OtpPage(verificationId: _verificationId),
+          builder: (context) => OtpPage(
+            verificationId: _verificationId,
+            phoneNumber: '+976${_phoneNumberController.text}',
+          ),
         ),
       );
     }
