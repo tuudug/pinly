@@ -84,11 +84,11 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
         });
       }
       setState(() {
-        otpStatus = "SUCCESS";
+        _succeedInput();
       });
     } catch (e) {
       setState(() {
-        otpStatus = "FAILED";
+        _failInput();
       });
       print('Error occurred while signing in: $e');
     }
@@ -106,10 +106,7 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
           disabled = true;
           loading = true;
         });
-        Future.delayed(const Duration(seconds: 2), () {
-          _failInput();
-        });
-        //_signInWithPhoneNumber(enteredCode);
+        _signInWithPhoneNumber(enteredCode);
       }
     }
   }
