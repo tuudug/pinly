@@ -19,7 +19,7 @@ class OtpPage extends StatefulWidget {
 
 class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FlutterSecureStorage storage = new FlutterSecureStorage();
+  final FlutterSecureStorage storage = const FlutterSecureStorage();
   final FirebaseFirestore db = FirebaseFirestore.instance;
   String enteredCode = '';
   bool loading = false;
