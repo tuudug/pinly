@@ -55,8 +55,9 @@ class _TryToLoginPageState extends ConsumerState<TryToLoginPage> {
                           }
                         else
                           {
-                            ref.read(loggedInUserProvider.notifier).state = await UserDb.getUser(localUser['user_uid']!)  
-                              ?? UserAccount(id: "", username: "", phoneNumber: "", friends: [], friendRequests: []),
+                            ref.read(loggedInUserProvider.notifier).state =
+                                await UserDb.getUser(localUser['user_uid']!) ??
+                                    UserAccount.empty(),
                             Navigator.pop(context),
                             Navigator.push(
                               context,

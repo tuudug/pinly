@@ -2,21 +2,27 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:pinly/firestore/user.dart';
+import 'package:pinly/models/user.dart';
+import 'package:pinly/providers/user.dart';
 
 import 'friends_page.dart';
 
-class MainMap extends StatefulWidget {
+class MainMap extends ConsumerStatefulWidget {
   const MainMap({super.key});
 
   @override
   _MainMapState createState() => _MainMapState();
 }
 
-class _MainMapState extends State<MainMap> {
+class _MainMapState extends ConsumerState<MainMap> {
+  bool _dialogOpen = false;
+  final TextEditingController _usernameController = TextEditingController();
   final locations = FirebaseDatabase.instance.ref('locations');
   final Completer<GoogleMapController> _controller =
       Completer<GoogleMapController>();
@@ -52,8 +58,50 @@ class _MainMapState extends State<MainMap> {
 
   bool _isSideMenuOpen = false;
 
+  Future<void> _displayTextInputDialog(BuildContext context) async {
+    _dialogOpen = true;
+    return showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (context) {
+          return WillPopScope(
+            onWillPop: () => Future.value(false),
+            child: AlertDialog(
+              title: Text('What is your name?'),
+              content: TextField(
+                onChanged: (value) {},
+                controller: _usernameController,
+                decoration: InputDecoration(hintText: ""),
+              ),
+              actions: [
+                FilledButton(
+                    onPressed: () async {
+                      UserDb.setUsername(_usernameController.text)
+                          .then((value) {
+                        UserAccount user = ref.read(loggedInUserProvider);
+                        user.username = _usernameController.text;
+                        ref.read(loggedInUserProvider.notifier).state = user;
+                        Navigator.pop(context);
+                      });
+                    },
+                    child: Text("Submit"))
+              ],
+            ),
+          );
+        });
+  }
+
+  _checkUsername(context) {
+    final user = ref.read(loggedInUserProvider);
+    if (user.username == null && !_dialogOpen) {
+      _displayTextInputDialog(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _checkUsername(context));
     _setupLocationWatcher();
     return Scaffold(
       body: Stack(

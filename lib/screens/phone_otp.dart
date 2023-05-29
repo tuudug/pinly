@@ -21,7 +21,8 @@ class OtpPage extends ConsumerStatefulWidget {
   _OtpPageState createState() => _OtpPageState();
 }
 
-class _OtpPageState extends ConsumerState<OtpPage> with SingleTickerProviderStateMixin {
+class _OtpPageState extends ConsumerState<OtpPage>
+    with SingleTickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FlutterSecureStorage storage = const FlutterSecureStorage();
   final FirebaseFirestore db = FirebaseFirestore.instance;
@@ -89,12 +90,18 @@ class _OtpPageState extends ConsumerState<OtpPage> with SingleTickerProviderStat
           "uid": userUid,
           "username": null,
         });
+        ref.read(loggedInUserProvider.notifier).state = UserAccount(
+            id: userUid!,
+            username: null,
+            phoneNumber: phone_number!,
+            friendRequests: [],
+            friends: []);
       } else {
         db.collection("users").doc(userUid).update(<String, String>{
           "session_id": session_id,
         });
-        ref.read(loggedInUserProvider.notifier).state = await UserDb.getUser(userUid!)  
-         ?? UserAccount(id: "", username: "", phoneNumber: "", friends: [], friendRequests: []);
+        ref.read(loggedInUserProvider.notifier).state =
+            await UserDb.getUser(userUid!) ?? UserAccount.empty();
       }
       setState(() {
         _succeedInput();
