@@ -13,7 +13,10 @@ class UserDb {
       user = UserAccount(
           id: userUid,
           username: data['username'],
-          phoneNumber: data['phone_number']);
+          phoneNumber: data['phone_number'],
+          friends: List<String>.from(data['friends']),
+          friendRequests: List<String>.from(data['friend_requests']),
+        );
     });
     return user;
   }

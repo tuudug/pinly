@@ -2,18 +2,23 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pinly/providers/user.dart';
 import 'package:pinly/screens/home_page.dart';
 import 'package:pinly/screens/main_map.dart';
 
-class TryToLoginPage extends StatefulWidget {
+import 'firestore/user.dart';
+import 'models/user.dart';
+
+class TryToLoginPage extends ConsumerStatefulWidget {
   const TryToLoginPage({super.key});
 
   @override
-  State<TryToLoginPage> createState() => _TryToLoginPageState();
+  ConsumerState<TryToLoginPage> createState() => _TryToLoginPageState();
 }
 
-class _TryToLoginPageState extends State<TryToLoginPage> {
+class _TryToLoginPageState extends ConsumerState<TryToLoginPage> {
   final FlutterSecureStorage storage = new FlutterSecureStorage();
   final FirebaseFirestore db = FirebaseFirestore.instance;
 
@@ -35,7 +40,7 @@ class _TryToLoginPageState extends State<TryToLoginPage> {
                   .collection("users")
                   .doc(localUser['user_uid'])
                   .get()
-                  .then((user) => {
+                  .then((user) async => {
                         if (user.data()?['session_id'].toString() !=
                             localUser['session_id'].toString())
                           {
@@ -50,6 +55,8 @@ class _TryToLoginPageState extends State<TryToLoginPage> {
                           }
                         else
                           {
+                            ref.read(loggedInUserProvider.notifier).state = await UserDb.getUser(localUser['user_uid']!)  
+                              ?? UserAccount(id: "", username: "", phoneNumber: "", friends: [], friendRequests: []),
                             Navigator.pop(context),
                             Navigator.push(
                               context,

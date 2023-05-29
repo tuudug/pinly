@@ -2,13 +2,17 @@ import 'dart:developer';
 import 'dart:ffi';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pinly/firestore/user.dart';
+import 'package:pinly/models/user.dart';
+import 'package:pinly/providers/user.dart';
 import 'package:pinly/screens/main_map.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class OtpPage extends StatefulWidget {
+class OtpPage extends ConsumerStatefulWidget {
   final String verificationId;
   final String phoneNumber;
   const OtpPage(
@@ -17,7 +21,7 @@ class OtpPage extends StatefulWidget {
   _OtpPageState createState() => _OtpPageState();
 }
 
-class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
+class _OtpPageState extends ConsumerState<OtpPage> with SingleTickerProviderStateMixin {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FlutterSecureStorage storage = const FlutterSecureStorage();
   final FirebaseFirestore db = FirebaseFirestore.instance;
@@ -70,24 +74,27 @@ class _OtpPageState extends State<OtpPage> with SingleTickerProviderStateMixin {
           await _auth.signInWithCredential(credential);
       final Uuid uuid = Uuid();
       final String session_id = uuid.v4();
-      final String? user_uid = userCredential.user?.uid;
+      final String? userUid = userCredential.user?.uid;
       final String? phone_number = userCredential.user?.phoneNumber;
 
-      await storage.write(key: "user_uid", value: user_uid);
+      await storage.write(key: "user_uid", value: userUid);
       await storage.write(key: "session_id", value: session_id);
 
       if (userCredential.additionalUserInfo?.isNewUser == true) {
-        db.collection("users").doc(user_uid).set(<String, dynamic>{
+        db.collection("users").doc(userUid).set(<String, dynamic>{
           "session_id": session_id,
           "friends": [],
+          "friend_requests": [],
           "phone_number": phone_number,
-          "uid": user_uid,
+          "uid": userUid,
           "username": null,
         });
       } else {
-        db.collection("users").doc(user_uid).update(<String, String>{
+        db.collection("users").doc(userUid).update(<String, String>{
           "session_id": session_id,
         });
+        ref.read(loggedInUserProvider.notifier).state = await UserDb.getUser(userUid!)  
+         ?? UserAccount(id: "", username: "", phoneNumber: "", friends: [], friendRequests: []);
       }
       setState(() {
         _succeedInput();

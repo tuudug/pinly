@@ -74,7 +74,7 @@ class _MainMapState extends State<MainMap> {
                 width: 1,
               ),
             ),
-            margin: EdgeInsets.only(left: 8, top: 24),
+            margin: EdgeInsets.only(left: 8, top: 48),
             child: IconButton(
               color: Color(0xFF8B5CF6),
               iconSize: 32,
@@ -94,7 +94,7 @@ class _MainMapState extends State<MainMap> {
                       width: 1,
                     ),
                   ),
-                  margin: EdgeInsets.only(right: 8, top: 24),
+                  margin: EdgeInsets.only(right: 8, top: 48),
                   child: IconButton(
                     color: Color(0xFF8B5CF6),
                     iconSize: 32,
@@ -113,7 +113,7 @@ class _MainMapState extends State<MainMap> {
                       width: 1,
                     ),
                   ),
-                  margin: EdgeInsets.only(right: 8, top: 24 + 56),
+                  margin: EdgeInsets.only(right: 8, top: 48 + 56),
                   child: IconButton(
                     color: Color(0xFF8B5CF6),
                     iconSize: 32,
@@ -139,7 +139,7 @@ class _MainMapState extends State<MainMap> {
                       width: 1,
                     ),
                   ),
-                  margin: EdgeInsets.only(right: 8, top: 24 + 56 + 56),
+                  margin: EdgeInsets.only(right: 8, top: 48 + 56 + 56),
                   child: IconButton(
                     color: Color(0xFF8B5CF6),
                     iconSize: 32,

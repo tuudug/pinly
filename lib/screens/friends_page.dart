@@ -1,24 +1,21 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pinly/providers/user.dart';
 
 import '../firestore/friends.dart';
 import '../models/user.dart';
 
-class FriendsPage extends StatefulWidget {
+class FriendsPage extends ConsumerStatefulWidget {
   @override
   _FriendsPageState createState() => _FriendsPageState();
 }
 
-class _FriendsPageState extends State<FriendsPage> {
+class _FriendsPageState extends ConsumerState<FriendsPage> {
   Future<List<UserAccount>> friends = FriendsDb.getFriends();
-  List<String> friendRequests = [
-    "Sarah Williams",
-    "Robert Davis",
-  ];
-
-  List<String> everyone = [
-    "Sarah Williams",
-    "Robert Davis",
-  ];
+  Future<List<UserAccount>> friendRequests = FriendsDb.getFriendRequests();
+  Future<List<UserAccount>> everyone = FriendsDb.getEveryone();
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +43,7 @@ class _FriendsPageState extends State<FriendsPage> {
                     future: friends,
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
-                        return CircularProgressIndicator();
+                        return Center(child: CircularProgressIndicator());
                       } else {
                         return ListView.builder(
                           itemCount: snapshot.data?.length,
@@ -69,70 +66,134 @@ class _FriendsPageState extends State<FriendsPage> {
                   ),
 
                   // Friend Requests Tab
-                  ListView.builder(
-                    itemCount: friendRequests.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage:
-                                NetworkImage('https://picsum.photos/200'),
-                          ),
-                          title: Text(friendRequests[index]),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextButton(
-                                onPressed: () {
-                                  // Accept friend request
-                                },
-                                child: Text(
-                                  "Accept",
-                                  style: TextStyle(color: Colors.green),
+                  FutureBuilder(
+                    future: friendRequests,
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return Center(child: CircularProgressIndicator());
+                      } else {
+                        return ListView.builder(
+                          itemCount: snapshot.data?.length,
+                          itemBuilder: (context, index) {
+                            return Card(
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage:
+                                      NetworkImage('https://picsum.photos/200'),
+                                ),
+                                title: Text(snapshot.data?[index].username ?? ""),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextButton(
+                                      onPressed: () {
+                                        // Accept friend request
+                                      },
+                                      child: Text(
+                                        "Accept",
+                                        style: TextStyle(color: Colors.green),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        // Decline friend request
+                                      },
+                                      child: Text(
+                                        "Decline",
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              TextButton(
-                                onPressed: () {
-                                  // Decline friend request
-                                },
-                                child: Text(
-                                  "Decline",
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                            );
+                          },
+                        );
+                      }
+                    }
                   ),
-                  ListView.builder(
-                    itemCount: everyone.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundImage:
-                                NetworkImage('https://picsum.photos/200'),
-                          ),
-                          title: Text(everyone[index]),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextButton(
-                                onPressed: () {
-                                  // Accept friend request
-                                },
-                                child: Text(
-                                  "Add Friend",
-                                  style: TextStyle(color: Colors.green),
+                  FutureBuilder(
+                    future: Future.wait([everyone, friends, friendRequests]),
+                    builder: (context, snapshot) {
+                      if(!snapshot.hasData) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      else {
+                        return ListView.builder(
+                          itemCount: snapshot.data?[0].length,
+                          itemBuilder: (context, index) {
+                            bool friends = false;
+                            bool requestReceived = false;
+                            bool requestSent = false;
+                            for(int j=0;j<(snapshot.data?[1].length as int);j++) {
+                              if(snapshot.data?[0][index].id == snapshot.data?[1][j].id) {
+                                friends = true;
+                              }
+                            }
+                            for(int j=0;j<(snapshot.data?[2].length as int);j++) {
+                              if(snapshot.data?[0][index].id == snapshot.data?[2][j].id) {
+                                requestReceived = true;
+                              }
+                            }
+                            for(int j=0;j<(snapshot.data?[0][index].friendRequests.length as int);j++) {
+                              if(ref.read(loggedInUserProvider).id == snapshot.data?[0][index].friendRequests[j]) {
+                                requestSent = true;
+                              }
+                            }
+                            //for(int j=0;j<snapshot.data)
+                            return Card(
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage:
+                                      NetworkImage('https://picsum.photos/200'),
+                                ),
+                                title: Text(snapshot.data?[0][index].username ?? ""),
+                                subtitle: Text(snapshot.data?[0][index].id ?? ""),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    !friends && !requestReceived && !requestSent ? TextButton(
+                                      onPressed: () {
+                                        // Accept friend request
+                                      },
+                                      child: const Text(
+                                        "Add Friend",
+                                        style: TextStyle(color: Colors.green),
+                                      ),
+                                    ) : requestReceived && !requestSent ?
+                                    TextButton(
+                                      onPressed: () {
+                                        // Accept friend request
+                                      },
+                                      child: const Text(
+                                        "Request received",
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ) : requestSent ? TextButton(
+                                      onPressed: () {
+                                        // Accept friend request
+                                      },
+                                      child: const Text(
+                                        "Request sent",
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ) : TextButton(
+                                      onPressed: () {
+                                        // Accept friend request
+                                      },
+                                      child: const Text(
+                                        "Friends",
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                            );
+                          },
+                        );
+                      }
+                    }
                   ),
                 ],
               ),
