@@ -96,11 +96,22 @@ class FriendsDb {
     String? user_uid = await storage.read(key: "user_uid");
 
     final userData = await db.collection("users").doc(user_uid).get();
+    final recipientData =
+        await db.collection("users").doc(recipientUserId).get();
     List<String> userFriends = List<String>.from(userData['friends']);
+    List<String> recipientFriends = List<String>.from(recipientData['friends']);
     if (userFriends.contains(recipientUserId)) {
       userFriends.remove(recipientUserId);
     }
+    if (recipientFriends.contains(user_uid)) {
+      recipientFriends.remove(user_uid);
+    }
+
     await db.collection("users").doc(user_uid).update({"friends": userFriends});
+    await db
+        .collection("users")
+        .doc(recipientUserId)
+        .update({"friends": recipientFriends});
   }
 
   static Future<void> acceptFriend(String recipientUserId) async {
@@ -109,9 +120,13 @@ class FriendsDb {
     String? user_uid = await storage.read(key: "user_uid");
 
     final userData = await db.collection("users").doc(user_uid).get();
+    final recipientData =
+        await db.collection("users").doc(recipientUserId).get();
+
     List<String> userFriendRequsts =
         List<String>.from(userData['friend_requests']);
     List<String> userFriends = List<String>.from(userData['friends']);
+    List<String> recipientFriends = List<String>.from(recipientData['friends']);
     if (userFriendRequsts.contains(recipientUserId)) {
       userFriendRequsts.remove(recipientUserId);
     }
@@ -119,11 +134,18 @@ class FriendsDb {
     if (!userFriends.contains(recipientUserId)) {
       userFriends.add(recipientUserId);
     }
+    if (!recipientFriends.contains(user_uid)) {
+      recipientFriends.add(user_uid!);
+    }
 
     await db
         .collection("users")
         .doc(user_uid)
         .update({"friend_requests": userFriendRequsts, "friends": userFriends});
+    await db
+        .collection("users")
+        .doc(recipientUserId)
+        .update({"friends": recipientFriends});
   }
 
   static Future<void> denyFriend(String recipientUserId) async {
