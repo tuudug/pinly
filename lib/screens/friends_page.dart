@@ -17,12 +17,25 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
   Future<List<UserAccount>> friendRequests = FriendsDb.getFriendRequests();
   Future<List<UserAccount>> everyone = FriendsDb.getEveryone();
 
-  _refresh() {
+  _refresh() async {
     setState(() {
       friends = FriendsDb.getFriends();
       friendRequests = FriendsDb.getFriendRequests();
       everyone = FriendsDb.getEveryone();
     });
+    UserAccount user = ref.read(loggedInUserProvider);
+    List<UserAccount> refreshedFriends = await friends;
+    List<String> refreshedFriendsString = [];
+    refreshedFriends.forEach((element) {
+      refreshedFriendsString.add(element.id);
+    });
+    log(refreshedFriendsString.toString());
+    ref.read(loggedInUserProvider.notifier).state = UserAccount(
+        id: user.id,
+        username: user.username,
+        phoneNumber: user.phoneNumber,
+        friends: refreshedFriendsString,
+        friendRequests: user.friendRequests);
   }
 
   @override

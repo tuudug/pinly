@@ -39,13 +39,18 @@ class _MainMapState extends ConsumerState<MainMap> {
           snapshot.children.forEach((element) {
             final data = Map<String, dynamic>.from(element.value as Map);
             final key = element.key.toString();
-            _markers[key] = Marker(
-                markerId: MarkerId(element.key.toString()),
-                position: LatLng(data['lat'], data['long']),
-                infoWindow: InfoWindow(
-                  title: data['name'],
-                  snippet: "hi lol",
-                ));
+            final friends = ref.read(loggedInUserProvider).friends;
+            if (friends.contains(key)) {
+              _markers[key] = Marker(
+                  markerId: MarkerId(element.key.toString()),
+                  position: LatLng(data['lat'], data['long']),
+                  infoWindow: InfoWindow(
+                    title: data['name'],
+                    snippet: "hi lol",
+                  ));
+            } else {
+              _markers.remove(key);
+            }
           }),
           setState(() {})
         });
