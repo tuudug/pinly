@@ -12,12 +12,16 @@ class FriendsDb {
     List<UserAccount> result = [];
     String? user_uid = await storage.read(key: "user_uid");
 
-    await db.collection("users").doc(user_uid).get(GetOptions(source: Source.serverAndCache)).then((snapshot) async {
+    await db
+        .collection("users")
+        .doc(user_uid)
+        .get(GetOptions(source: Source.serverAndCache))
+        .then((snapshot) async {
       final data = snapshot.data() as Map<String, dynamic>;
       final List<dynamic> friends = data['friends'];
       for (int i = 0; i < friends.length; i++) {
-        UserAccount user = await UserDb.getUser(friends[i]) ??
-            UserAccount(id: "", username: "empty.", phoneNumber: "", friends: [], friendRequests: []);
+        UserAccount user =
+            await UserDb.getUser(friends[i]) ?? UserAccount.empty();
         result.add(user);
       }
     });
@@ -30,12 +34,16 @@ class FriendsDb {
     List<UserAccount> result = [];
     String? user_uid = await storage.read(key: "user_uid");
 
-    await db.collection("users").doc(user_uid).get(GetOptions(source: Source.serverAndCache)).then((snapshot) async {
+    await db
+        .collection("users")
+        .doc(user_uid)
+        .get(GetOptions(source: Source.serverAndCache))
+        .then((snapshot) async {
       final data = snapshot.data() as Map<String, dynamic>;
       final List<dynamic> friends = data['friend_requests'];
       for (int i = 0; i < friends.length; i++) {
-        UserAccount user = await UserDb.getUser(friends[i]) ??
-            UserAccount(id: "", username: "empty.", phoneNumber: "", friends: [], friendRequests: []);
+        UserAccount user =
+            await UserDb.getUser(friends[i]) ?? UserAccount.empty();
         result.add(user);
       }
     });
@@ -43,34 +51,95 @@ class FriendsDb {
   }
 
   static Future<List<UserAccount>> getEveryone() async {
+    const FlutterSecureStorage storage = FlutterSecureStorage();
     final FirebaseFirestore db = FirebaseFirestore.instance;
     List<UserAccount> result = [];
+    String? user_uid = await storage.read(key: "user_uid");
 
-    await db.collection("users").get(GetOptions(source: Source.serverAndCache)).then((snapshot) async {
+    await db
+        .collection("users")
+        .get(GetOptions(source: Source.serverAndCache))
+        .then((snapshot) async {
       final data = snapshot.docs;
       for (int i = 0; i < data.length; i++) {
         final currentId = data[i].data()['uid'];
-        UserAccount user = await UserDb.getUser(currentId) ??
-            UserAccount(id: "", username: "empty.", phoneNumber: "", friends: [], friendRequests: []);
-        result.add(user);
+        UserAccount user =
+            await UserDb.getUser(currentId) ?? UserAccount.empty();
+        if (user.username != null && user.id != user_uid) {
+          result.add(user);
+        }
       }
     });
     return result;
   }
 
-  static Future<void> addFriend(userId) async {
+  static Future<void> addFriend(String recipientUserId) async {
+    const FlutterSecureStorage storage = FlutterSecureStorage();
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+    String? user_uid = await storage.read(key: "user_uid");
 
+    final userData = await db.collection("users").doc(recipientUserId).get();
+    List<String> userFriendRequsts =
+        List<String>.from(userData['friend_requests']);
+    if (!userFriendRequsts.contains(user_uid)) {
+      userFriendRequsts.add(user_uid!);
+    }
+    await db
+        .collection("users")
+        .doc(recipientUserId)
+        .update({"friend_requests": userFriendRequsts});
   }
 
-  static Future<void> removeFriend(userId) async {
+  static Future<void> removeFriend(String recipientUserId) async {
+    const FlutterSecureStorage storage = FlutterSecureStorage();
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+    String? user_uid = await storage.read(key: "user_uid");
 
+    final userData = await db.collection("users").doc(user_uid).get();
+    List<String> userFriends = List<String>.from(userData['friends']);
+    if (userFriends.contains(recipientUserId)) {
+      userFriends.remove(recipientUserId);
+    }
+    await db.collection("users").doc(user_uid).update({"friends": userFriends});
   }
 
-  static Future<void> acceptFriend(userId) async {
-    
+  static Future<void> acceptFriend(String recipientUserId) async {
+    const FlutterSecureStorage storage = FlutterSecureStorage();
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+    String? user_uid = await storage.read(key: "user_uid");
+
+    final userData = await db.collection("users").doc(user_uid).get();
+    List<String> userFriendRequsts =
+        List<String>.from(userData['friend_requests']);
+    List<String> userFriends = List<String>.from(userData['friends']);
+    if (userFriendRequsts.contains(recipientUserId)) {
+      userFriendRequsts.remove(recipientUserId);
+    }
+
+    if (!userFriends.contains(recipientUserId)) {
+      userFriends.add(recipientUserId);
+    }
+
+    await db
+        .collection("users")
+        .doc(user_uid)
+        .update({"friend_requests": userFriendRequsts, "friends": userFriends});
   }
 
-  static Future<void> denyFriend(userId) async {
-    
+  static Future<void> denyFriend(String recipientUserId) async {
+    const FlutterSecureStorage storage = FlutterSecureStorage();
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+    String? user_uid = await storage.read(key: "user_uid");
+
+    final userData = await db.collection("users").doc(user_uid).get();
+    List<String> userFriendRequsts =
+        List<String>.from(userData['friend_requests']);
+    if (userFriendRequsts.contains(recipientUserId)) {
+      userFriendRequsts.remove(recipientUserId);
+    }
+    await db
+        .collection("users")
+        .doc(user_uid)
+        .update({"friend_requests": userFriendRequsts});
   }
 }

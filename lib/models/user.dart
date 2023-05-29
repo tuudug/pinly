@@ -1,6 +1,6 @@
 class UserAccount {
   String id;
-  String username;
+  String? username;
   String phoneNumber;
   List<String> friends;
   List<String> friendRequests;
@@ -12,4 +12,11 @@ class UserAccount {
     required this.friends,
     required this.friendRequests,
   });
+
+  UserAccount.empty()
+      : id = "",
+        username = "",
+        phoneNumber = "",
+        friends = [],
+        friendRequests = [];
 }
