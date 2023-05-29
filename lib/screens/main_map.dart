@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:location/location.dart';
 import 'package:pinly/firestore/user.dart';
 import 'package:pinly/models/user.dart';
 import 'package:pinly/providers/user.dart';
@@ -22,6 +23,11 @@ class MainMap extends ConsumerStatefulWidget {
 
 class _MainMapState extends ConsumerState<MainMap> {
   bool _dialogOpen = false;
+  bool isMyLocationWatcherSetup = false;
+  double? myLat;
+  double? myLong;
+
+  String locationStatus = "UNKNOWN";
   final TextEditingController _usernameController = TextEditingController();
   final locations = FirebaseDatabase.instance.ref('locations');
   final Completer<GoogleMapController> _controller =
@@ -34,19 +40,46 @@ class _MainMapState extends ConsumerState<MainMap> {
     });
   }
 
+  _setupMyLocationWatcher() {
+    if (!isMyLocationWatcherSetup) {
+      Location location = new Location();
+      location.changeSettings(
+          accuracy: LocationAccuracy.high, interval: 10000, distanceFilter: 5);
+      location.onLocationChanged.listen((LocationData currentLocation) {
+        final myNode = FirebaseDatabase.instance
+            .ref('locations/${ref.read(loggedInUserProvider).id}');
+        log('locations/${ref.read(loggedInUserProvider).id}');
+        myNode.set({
+          'name': ref.read(loggedInUserProvider).username,
+          'lat': currentLocation.latitude,
+          'long': currentLocation.longitude,
+          'timestamp': DateTime.now().toLocal().toString(),
+        });
+        myLat = currentLocation.latitude;
+        myLong = currentLocation.longitude;
+      });
+    }
+  }
+
   _updateMarkers() {
     locations.get().then((snapshot) => {
           snapshot.children.forEach((element) {
             final data = Map<String, dynamic>.from(element.value as Map);
             final key = element.key.toString();
             final friends = ref.read(loggedInUserProvider).friends;
-            if (friends.contains(key)) {
+            if (friends.contains(key) ||
+                key == ref.read(loggedInUserProvider).id) {
               _markers[key] = Marker(
+                  icon: key == ref.read(loggedInUserProvider).id
+                      ? BitmapDescriptor.defaultMarkerWithHue(321.0)
+                      : BitmapDescriptor.defaultMarker,
                   markerId: MarkerId(element.key.toString()),
                   position: LatLng(data['lat'], data['long']),
                   infoWindow: InfoWindow(
                     title: data['name'],
-                    snippet: "hi lol",
+                    snippet: data['timestamp'] != null
+                        ? 'Last Updated: ${data['timestamp']}'
+                        : "Last Updated Unknown",
                   ));
             } else {
               _markers.remove(key);
@@ -103,10 +136,47 @@ class _MainMapState extends ConsumerState<MainMap> {
     }
   }
 
+  _checkLocationPermission() async {
+    Location location = new Location();
+
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+
+    _serviceEnabled = await location.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await location.requestService();
+      if (!_serviceEnabled) {
+        locationStatus = "SERVICE_NOT_ENABLED";
+        return;
+      }
+    }
+
+    _permissionGranted = await location.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await location.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) {
+        locationStatus = "PERMISSION_NOT_GRANTED";
+        return;
+      }
+    }
+
+    locationStatus = "GRANTED";
+    return;
+  }
+
+  @override
+  void initState() {
+    _checkLocationPermission();
+  }
+
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _checkUsername(context));
+    if (locationStatus == "GRANTED") {
+      _setupMyLocationWatcher();
+      isMyLocationWatcherSetup = true;
+    }
     _setupLocationWatcher();
     return Scaffold(
       body: Stack(
@@ -207,14 +277,20 @@ class _MainMapState extends ConsumerState<MainMap> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FloatingActionButton(
-        onPressed: _goToTheLake,
+        onPressed: _goToMe,
         child: Icon(Icons.location_searching),
       ),
     );
   }
 
-  Future<void> _goToTheLake() async {
+  Future<void> _goToMe() async {
     final GoogleMapController controller = await _controller.future;
-    await controller.animateCamera(CameraUpdate.newCameraPosition(ulaanbaatar));
+    if (myLat != null && myLong != null) {
+      await controller
+          .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+        target: LatLng(myLat!, myLong!),
+        zoom: 14.4746,
+      )));
+    }
   }
 }
