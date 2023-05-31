@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:location/location.dart';
 import 'package:pinly/firestore/user.dart';
 import 'package:pinly/models/user.dart';
 import 'package:pinly/providers/user.dart';
+
 
 import 'friends_page.dart';
 
@@ -28,10 +30,10 @@ class _MainMapState extends ConsumerState<MainMap> {
   double? myLong;
 
   String locationStatus = "UNKNOWN";
+  double _value = 15.0;
   final TextEditingController _usernameController = TextEditingController();
   final locations = FirebaseDatabase.instance.ref('locations');
-  final Completer<GoogleMapController> _controller =
-      Completer<GoogleMapController>();
+  late final GoogleMapController _mapController;
 
   final Map<String, Marker> _markers = {};
   _setupLocationWatcher() {
@@ -48,7 +50,6 @@ class _MainMapState extends ConsumerState<MainMap> {
       location.onLocationChanged.listen((LocationData currentLocation) {
         final myNode = FirebaseDatabase.instance
             .ref('locations/${ref.read(loggedInUserProvider).id}');
-        log('locations/${ref.read(loggedInUserProvider).id}');
         myNode.set({
           'name': ref.read(loggedInUserProvider).username,
           'lat': currentLocation.latitude,
@@ -185,7 +186,12 @@ class _MainMapState extends ConsumerState<MainMap> {
             mapType: MapType.normal,
             initialCameraPosition: ulaanbaatar,
             onMapCreated: (GoogleMapController controller) {
-              _controller.complete(controller);
+              _mapController = controller;
+            },
+            onCameraMove: (position) {
+              setState(() {
+                _value = position.zoom;
+              });
             },
             markers: _markers.values.toSet(),
           ),
@@ -272,7 +278,34 @@ class _MainMapState extends ConsumerState<MainMap> {
                 ),
               ),
             ],
-          )
+          ),
+            Positioned(
+              top: 0,
+              right: -10,
+              bottom: 0,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(0, 200, 0, 100),
+                child: Opacity(
+                  opacity: _value > 10.0 ? 0.5 : 0.0,
+                  child: SfSlider.vertical(
+                      min: 10.0,
+                      max: 21.0,
+                      value: _value,
+                      interval: 20,
+                      showTicks: false,
+                      showLabels: false,
+                      enableTooltip: false,
+                      minorTicksPerInterval: 1,
+                      onChanged: (dynamic value) {
+                        setState(() {
+                          _value = value;
+                          _mapController.moveCamera(CameraUpdate.zoomTo(value));
+                        });
+                      },
+                    ),
+                ),
+              ),
+            ),
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -284,9 +317,8 @@ class _MainMapState extends ConsumerState<MainMap> {
   }
 
   Future<void> _goToMe() async {
-    final GoogleMapController controller = await _controller.future;
     if (myLat != null && myLong != null) {
-      await controller
+      await _mapController
           .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
         target: LatLng(myLat!, myLong!),
         zoom: 14.4746,
