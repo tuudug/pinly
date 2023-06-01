@@ -1,18 +1,22 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:collection/collection.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:pinly/screens/profile_page.dart';
+import 'package:pinly/widgets/friend_profile.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:location/location.dart';
 import 'package:pinly/firestore/user.dart';
 import 'package:pinly/models/user.dart';
 import 'package:pinly/providers/user.dart';
-
 
 import 'friends_page.dart';
 
@@ -23,19 +27,21 @@ class MainMap extends ConsumerStatefulWidget {
   _MainMapState createState() => _MainMapState();
 }
 
-class _MainMapState extends ConsumerState<MainMap> {
+class _MainMapState extends ConsumerState<MainMap>
+    with TickerProviderStateMixin {
   bool _dialogOpen = false;
   bool isMyLocationWatcherSetup = false;
   double? myLat;
   double? myLong;
 
   String locationStatus = "UNKNOWN";
-  double _value = 15.0;
+  double _zoomValue = 15.0;
   final TextEditingController _usernameController = TextEditingController();
   final locations = FirebaseDatabase.instance.ref('locations');
-  late final GoogleMapController _mapController;
+  late final _mapController = AnimatedMapController(vsync: this);
 
-  final Map<String, Marker> _markers = {};
+  final List<Marker> _markers = [];
+
   _setupLocationWatcher() {
     locations.onValue.listen((DatabaseEvent event) {
       _updateMarkers();
@@ -68,32 +74,72 @@ class _MainMapState extends ConsumerState<MainMap> {
             final data = Map<String, dynamic>.from(element.value as Map);
             final key = element.key.toString();
             final friends = ref.read(loggedInUserProvider).friends;
-            if (friends.contains(key) ||
-                key == ref.read(loggedInUserProvider).id) {
-              _markers[key] = Marker(
-                  icon: key == ref.read(loggedInUserProvider).id
-                      ? BitmapDescriptor.defaultMarkerWithHue(321.0)
-                      : BitmapDescriptor.defaultMarker,
-                  markerId: MarkerId(element.key.toString()),
-                  position: LatLng(data['lat'], data['long']),
-                  infoWindow: InfoWindow(
-                    title: data['name'],
-                    snippet: data['timestamp'] != null
-                        ? 'Last Updated: ${data['timestamp']}'
-                        : "Last Updated Unknown",
+            final user = ref.read(loggedInUserProvider);
+            if (friends.contains(key) || key == user.id) {
+              bool found = false;
+              for (int i = 0; i < _markers.length; i++) {
+                if (_markers[i].key == Key(key)) {
+                  found = true;
+                  setState(() {
+                    _markers[i] = Marker(
+                      key: Key(key),
+                      builder: (context) {
+                        if (key == user.id) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.pink,
+                              borderRadius: BorderRadius.circular(48),
+                            ),
+                          );
+                        }
+                        return GestureDetector(
+                          onTap: () {
+                            _showFriendProfile(data['name'], context);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Color(0xFF8B5CF6),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Center(
+                              child: Text(
+                                data['name'][0],
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      point: LatLng(data['lat'], data['long']),
+                      width: key == user.id ? 12 : 45,
+                      height: key == user.id ? 12 : 45,
+                    );
+                  });
+                }
+              }
+              if (found != true) {
+                setState(() {
+                  _markers.add(Marker(
+                    key: Key(key),
+                    builder: (context) {
+                      return FlutterLogo(size: 80);
+                    },
+                    point: LatLng(data['lat'], data['long']),
+                    width: 80,
+                    height: 80,
                   ));
+                });
+              }
             } else {
-              _markers.remove(key);
+              //_markers.remove(key);
             }
           }),
-          setState(() {})
         });
   }
-
-  static const CameraPosition ulaanbaatar = CameraPosition(
-    target: LatLng(47.8864, 106.9057),
-    zoom: 14.4746,
-  );
 
   bool _isSideMenuOpen = false;
 
@@ -179,21 +225,31 @@ class _MainMapState extends ConsumerState<MainMap> {
       isMyLocationWatcherSetup = true;
     }
     _setupLocationWatcher();
+
     return Scaffold(
       body: Stack(
         children: [
-          GoogleMap(
-            mapType: MapType.normal,
-            initialCameraPosition: ulaanbaatar,
-            onMapCreated: (GoogleMapController controller) {
-              _mapController = controller;
-            },
-            onCameraMove: (position) {
-              setState(() {
-                _value = position.zoom;
-              });
-            },
-            markers: _markers.values.toSet(),
+          FlutterMap(
+            options: MapOptions(
+              maxZoom: 18.0,
+              center: LatLng(47.9188, 106.9176),
+              zoom: 12.4746,
+              onPositionChanged: (position, hasGesture) {
+                setState(() {
+                  _zoomValue = position.zoom!;
+                });
+              },
+            ),
+            mapController: _mapController,
+            children: [
+              TileLayer(
+                urlTemplate:
+                    'https://api.mapbox.com/styles/v1/tuudug/clid418pj001w01r0fhs8fptu/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoidHV1ZHVnIiwiYSI6ImNsaWN6ZHBtaTBvZmIzc28ybmt2eWNldmEifQ.AxQ4iSKGHr34_zSbxw-4kA',
+                userAgentPackageName: 'com.example.app',
+              ),
+              MarkerLayer(markers: _markers),
+            ],
+            //markers: _markers.values.toSet(),
           ),
           Container(
             decoration: BoxDecoration(
@@ -228,7 +284,14 @@ class _MainMapState extends ConsumerState<MainMap> {
                     color: Color(0xFF8B5CF6),
                     iconSize: 32,
                     icon: Icon(Icons.account_circle),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProfilePage(),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -279,33 +342,33 @@ class _MainMapState extends ConsumerState<MainMap> {
               ),
             ],
           ),
-            Positioned(
-              top: 0,
-              right: -10,
-              bottom: 0,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 200, 0, 100),
-                child: Opacity(
-                  opacity: _value > 10.0 ? 0.5 : 0.0,
-                  child: SfSlider.vertical(
-                      min: 10.0,
-                      max: 21.0,
-                      value: _value,
-                      interval: 20,
-                      showTicks: false,
-                      showLabels: false,
-                      enableTooltip: false,
-                      minorTicksPerInterval: 1,
-                      onChanged: (dynamic value) {
-                        setState(() {
-                          _value = value;
-                          _mapController.moveCamera(CameraUpdate.zoomTo(value));
-                        });
-                      },
-                    ),
+          Positioned(
+            top: 0,
+            right: -10,
+            bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 200, 0, 100),
+              child: Opacity(
+                opacity: _zoomValue > 10.0 ? 0.5 : 0.0,
+                child: SfSlider.vertical(
+                  min: 10.0,
+                  max: 18.0,
+                  value: _zoomValue,
+                  interval: 20,
+                  showTicks: false,
+                  showLabels: false,
+                  enableTooltip: false,
+                  minorTicksPerInterval: 1,
+                  onChanged: (dynamic value) {
+                    setState(() {
+                      _zoomValue = value;
+                      _mapController.move(_mapController.center, value);
+                    });
+                  },
                 ),
               ),
             ),
+          ),
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -316,13 +379,34 @@ class _MainMapState extends ConsumerState<MainMap> {
     );
   }
 
+  void _showFriendProfile(String username, BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20.0),
+        ),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          height: 750.0,
+          child: Center(child: FriendProfile(username: username)),
+        );
+      },
+    );
+  }
+
   Future<void> _goToMe() async {
     if (myLat != null && myLong != null) {
-      await _mapController
-          .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-        target: LatLng(myLat!, myLong!),
-        zoom: 14.4746,
-      )));
+      _mapController.animateTo(dest: LatLng(myLat!, myLong!), zoom: 14.4748);
+    }
+  }
+
+  Future<void> _startingZoom() async {
+    log("NIGGA");
+    if (myLat != null && myLong != null) {
+      _mapController.animateTo(
+          dest: LatLng(47.9188, 106.9176), zoom: 14.4748, curve: Curves.easeIn);
     }
   }
 }
