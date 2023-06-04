@@ -243,9 +243,8 @@ class _MainMapState extends ConsumerState<MainMap>
             mapController: _mapController,
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://api.mapbox.com/styles/v1/tuudug/clid418pj001w01r0fhs8fptu/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoidHV1ZHVnIiwiYSI6ImNsaWN6ZHBtaTBvZmIzc28ybmt2eWNldmEifQ.AxQ4iSKGHr34_zSbxw-4kA',
-                userAgentPackageName: 'com.example.app',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'mn.tuudug.pinlyf',
               ),
               MarkerLayer(markers: _markers),
             ],
