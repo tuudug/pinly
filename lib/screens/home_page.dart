@@ -58,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage>
                 child: AnimatedOpacity(
                     opacity: _opacity,
                     duration: const Duration(milliseconds: 2000),
-                    child: Circle(color: Color(0xFF7941FB), radius: 900.0)),
+                    child: Circle(color: Color(0xFF7941FB), radius: 1200.0)),
               ),
               Positioned(
                 top: -40,
