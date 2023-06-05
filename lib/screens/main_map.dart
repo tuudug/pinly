@@ -4,16 +4,18 @@ import 'package:collection/collection.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pinly/screens/profile_page.dart';
 import 'package:pinly/widgets/friend_profile.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:location/location.dart';
 import 'package:pinly/firestore/user.dart';
 import 'package:pinly/models/user.dart';
 import 'package:pinly/providers/user.dart';
@@ -29,6 +31,9 @@ class MainMap extends ConsumerStatefulWidget {
 
 class _MainMapState extends ConsumerState<MainMap>
     with TickerProviderStateMixin {
+  final String styleUrl = "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png";
+  final String apiKey = "20afebe9-0d8a-41a3-8ae4-5c3b35dc8d08";
+
   bool _dialogOpen = false;
   bool isMyLocationWatcherSetup = false;
   double? myLat;
@@ -50,21 +55,24 @@ class _MainMapState extends ConsumerState<MainMap>
 
   _setupMyLocationWatcher() {
     if (!isMyLocationWatcherSetup) {
-      Location location = new Location();
-      location.changeSettings(
-          accuracy: LocationAccuracy.high, interval: 10000, distanceFilter: 5);
-      location.onLocationChanged.listen((LocationData currentLocation) {
-        final myNode = FirebaseDatabase.instance
-            .ref('locations/${ref.read(loggedInUserProvider).id}');
-        myNode.set({
-          'name': ref.read(loggedInUserProvider).username,
-          'lat': currentLocation.latitude,
-          'long': currentLocation.longitude,
-          'timestamp': DateTime.now().toLocal().toString(),
+      const LocationSettings locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 100,
+      );
+      Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+        (Position? position) {
+            if(position != null) {
+              final myNode = FirebaseDatabase.instance.ref('locations/${ref.read(loggedInUserProvider).id}');
+              myNode.set({
+                'name': ref.read(loggedInUserProvider).username,
+                'lat': position.latitude,
+                'long': position.longitude,
+                'timestamp': DateTime.now().toLocal().toString(),
+              });
+              myLat = position.latitude;
+              myLong = position.longitude;
+            }
         });
-        myLat = currentLocation.latitude;
-        myLong = currentLocation.longitude;
-      });
     }
   }
 
@@ -85,12 +93,7 @@ class _MainMapState extends ConsumerState<MainMap>
                       key: Key(key),
                       builder: (context) {
                         if (key == user.id) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Colors.pink,
-                              borderRadius: BorderRadius.circular(48),
-                            ),
-                          );
+                          return Container();
                         }
                         return GestureDetector(
                           onTap: () {
@@ -184,24 +187,20 @@ class _MainMapState extends ConsumerState<MainMap>
   }
 
   _checkLocationPermission() async {
-    Location location = new Location();
+    bool serviceEnabled;
+    LocationPermission permission;
 
-    bool _serviceEnabled;
-    PermissionStatus _permissionGranted;
-
-    _serviceEnabled = await location.serviceEnabled();
-    if (!_serviceEnabled) {
-      _serviceEnabled = await location.requestService();
-      if (!_serviceEnabled) {
-        locationStatus = "SERVICE_NOT_ENABLED";
-        return;
-      }
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      locationStatus = "SERVICE_NOT_ENABLED";
+      return;
     }
 
-    _permissionGranted = await location.hasPermission();
-    if (_permissionGranted == PermissionStatus.denied) {
-      _permissionGranted = await location.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission != LocationPermission.denied) {
         locationStatus = "PERMISSION_NOT_GRANTED";
         return;
       }
@@ -241,10 +240,18 @@ class _MainMapState extends ConsumerState<MainMap>
               },
             ),
             mapController: _mapController,
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'mn.tuudug.pinlyf',
+            children: (locationStatus == "GRANTED") ?
+            ([
+              TileLayer(urlTemplate:
+                '$styleUrl?api_key=$apiKey',
+                tileProvider: FMTC.instance('mapStore').getTileProvider(),
+              ),
+              CurrentLocationLayer(),
+              MarkerLayer(markers: _markers),
+            ]) : [
+              TileLayer(urlTemplate:
+                '$styleUrl?api_key=$apiKey',
+                tileProvider: FMTC.instance('mapStore').getTileProvider(),
               ),
               MarkerLayer(markers: _markers),
             ],

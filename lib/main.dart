@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pinly/screens/home_page.dart';
 import 'package:pinly/screens/phone_verify.dart';
+import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
 import 'package:pinly/try_to_login.dart';
 
 import 'firebase_options.dart';
@@ -25,6 +26,8 @@ void main() async {
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     return true;
   };
+  await FlutterMapTileCaching.initialise();
+  await FMTC.instance('mapStore').manage.createAsync();
   runApp(const ProviderScope(child: MyApp()));
 }
 

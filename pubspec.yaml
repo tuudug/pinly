@@ -44,13 +44,15 @@ dependencies:
   cloud_firestore: ^4.7.1
   google_maps_flutter: ^2.2.8
   firebase_database: ^10.2.1
-  location: ^4.4.0
   firebase_crashlytics: ^3.3.1
   syncfusion_flutter_sliders: ^21.2.8
   flutter_map: ^4.0.0
   latlong2: ^0.8.2
   flutter_map_animations: ^0.3.0
   draggable_bottom_sheet: ^1.0.2
+  flutter_map_location_marker: ^6.0.0
+  geolocator: ^9.0.2
+  flutter_map_tile_caching: ^8.0.0
 
 dev_dependencies:
   flutter_test:
