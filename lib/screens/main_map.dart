@@ -14,6 +14,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:pinly/screens/profile_page.dart';
 import 'package:pinly/widgets/friend_profile.dart';
+import 'package:pinly/widgets/friend_timestamp_box.dart';
+import 'package:pinly/widgets/pulsating_circle.dart';
+import 'package:relative_time/relative_time.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:pinly/firestore/user.dart';
@@ -31,13 +34,15 @@ class MainMap extends ConsumerStatefulWidget {
 
 class _MainMapState extends ConsumerState<MainMap>
     with TickerProviderStateMixin {
-  final String styleUrl = "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png";
+  final String styleUrl =
+      "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png";
   final String apiKey = "20afebe9-0d8a-41a3-8ae4-5c3b35dc8d08";
 
   bool _dialogOpen = false;
   bool isMyLocationWatcherSetup = false;
   double? myLat;
   double? myLong;
+  String? focusedFriend;
 
   String locationStatus = "UNKNOWN";
   double _zoomValue = 15.0;
@@ -59,20 +64,21 @@ class _MainMapState extends ConsumerState<MainMap>
         accuracy: LocationAccuracy.high,
         distanceFilter: 100,
       );
-      Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-        (Position? position) {
-            if(position != null) {
-              final myNode = FirebaseDatabase.instance.ref('locations/${ref.read(loggedInUserProvider).id}');
-              myNode.set({
-                'name': ref.read(loggedInUserProvider).username,
-                'lat': position.latitude,
-                'long': position.longitude,
-                'timestamp': DateTime.now().toLocal().toString(),
-              });
-              myLat = position.latitude;
-              myLong = position.longitude;
-            }
-        });
+      Geolocator.getPositionStream(locationSettings: locationSettings)
+          .listen((Position? position) {
+        if (position != null) {
+          final myNode = FirebaseDatabase.instance
+              .ref('locations/${ref.read(loggedInUserProvider).id}');
+          myNode.set({
+            'name': ref.read(loggedInUserProvider).username,
+            'lat': position.latitude,
+            'long': position.longitude,
+            'timestamp': DateTime.now().toLocal().toString(),
+          });
+          myLat = position.latitude;
+          myLong = position.longitude;
+        }
+      });
     }
   }
 
@@ -97,29 +103,78 @@ class _MainMapState extends ConsumerState<MainMap>
                         }
                         return GestureDetector(
                           onTap: () {
-                            _showFriendProfile(data['name'], context);
+                            if (focusedFriend == key) {
+                              _showFriendProfile(data['name'], context);
+                            }
+                            _goToCoords(data['lat'], data['long'])
+                                .then((_) => focusedFriend = key);
                           },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Color(0xFF8B5CF6),
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: Center(
-                              child: Text(
-                                data['name'][0],
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            clipBehavior: Clip.none,
+                            children: focusedFriend == key
+                                ? ([
+                                    Positioned(
+                                        top: -90,
+                                        child: FriendTimestampBox(
+                                            text: RelativeTime.locale(
+                                                    const Locale('en'),
+                                                    timeUnits: const <TimeUnit>[
+                                                      TimeUnit.day,
+                                                      TimeUnit.hour,
+                                                      TimeUnit.minute,
+                                                    ],
+                                                    numeric: true)
+                                                .format(DateTime.parse(
+                                                    data['timestamp'])))),
+                                    PulsatingCircle(
+                                        size: focusedFriend == key ? 100 : 0,
+                                        color: Colors.greenAccent),
+                                    Container(
+                                      width: 50,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF8B5CF6),
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          data['name'][0],
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  ])
+                                : [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF8B5CF6),
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          data['name'][0],
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  ],
                           ),
                         );
                       },
                       point: LatLng(data['lat'], data['long']),
-                      width: key == user.id ? 12 : 45,
-                      height: key == user.id ? 12 : 45,
+                      width: focusedFriend == key ? 100 : 55,
+                      height: focusedFriend == key ? 100 : 55,
                     );
                   });
                 }
@@ -196,7 +251,6 @@ class _MainMapState extends ConsumerState<MainMap>
       return;
     }
 
-
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -235,26 +289,33 @@ class _MainMapState extends ConsumerState<MainMap>
               zoom: 12.4746,
               onPositionChanged: (position, hasGesture) {
                 setState(() {
+                  focusedFriend = null;
                   _zoomValue = position.zoom!;
+                });
+              },
+              onTap: (position, latlng) {
+                setState(() {
+                  focusedFriend = null;
                 });
               },
             ),
             mapController: _mapController,
-            children: (locationStatus == "GRANTED") ?
-            ([
-              TileLayer(urlTemplate:
-                '$styleUrl?api_key=$apiKey',
-                tileProvider: FMTC.instance('mapStore').getTileProvider(),
-              ),
-              CurrentLocationLayer(),
-              MarkerLayer(markers: _markers),
-            ]) : [
-              TileLayer(urlTemplate:
-                '$styleUrl?api_key=$apiKey',
-                tileProvider: FMTC.instance('mapStore').getTileProvider(),
-              ),
-              MarkerLayer(markers: _markers),
-            ],
+            children: (locationStatus == "GRANTED")
+                ? ([
+                    TileLayer(
+                      urlTemplate: '$styleUrl?api_key=$apiKey',
+                      tileProvider: FMTC.instance('mapStore').getTileProvider(),
+                    ),
+                    CurrentLocationLayer(),
+                    MarkerLayer(markers: _markers),
+                  ])
+                : [
+                    TileLayer(
+                      urlTemplate: '$styleUrl?api_key=$apiKey',
+                      tileProvider: FMTC.instance('mapStore').getTileProvider(),
+                    ),
+                    MarkerLayer(markers: _markers),
+                  ],
             //markers: _markers.values.toSet(),
           ),
           Container(
@@ -367,6 +428,7 @@ class _MainMapState extends ConsumerState<MainMap>
                   minorTicksPerInterval: 1,
                   onChanged: (dynamic value) {
                     setState(() {
+                      focusedFriend = null;
                       _zoomValue = value;
                       _mapController.move(_mapController.center, value);
                     });
@@ -403,9 +465,15 @@ class _MainMapState extends ConsumerState<MainMap>
   }
 
   Future<void> _goToMe() async {
+    focusedFriend = null;
     if (myLat != null && myLong != null) {
       _mapController.animateTo(dest: LatLng(myLat!, myLong!), zoom: 14.4748);
     }
+  }
+
+  Future<void> _goToCoords(double lat, double long) async {
+    await _mapController.animateTo(
+        dest: LatLng(lat, long), zoom: 17.4748, rotation: 0);
   }
 
   Future<void> _startingZoom() async {
