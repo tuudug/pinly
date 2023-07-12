@@ -12,9 +12,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:pinly/firestore/places.dart';
+import 'package:pinly/providers/selected_place_type_provider.dart';
 import 'package:pinly/screens/profile_page.dart';
 import 'package:pinly/widgets/friend_profile.dart';
 import 'package:pinly/widgets/friend_timestamp_box.dart';
+import 'package:pinly/widgets/pill_badge.dart';
+import 'package:pinly/widgets/place_type_buttons.dart';
 import 'package:pinly/widgets/pulsating_circle.dart';
 import 'package:relative_time/relative_time.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
@@ -23,6 +27,7 @@ import 'package:pinly/firestore/user.dart';
 import 'package:pinly/models/user.dart';
 import 'package:pinly/providers/user.dart';
 
+import '../models/place.dart';
 import 'friends_page.dart';
 
 class MainMap extends ConsumerStatefulWidget {
@@ -35,8 +40,7 @@ class MainMap extends ConsumerStatefulWidget {
 class _MainMapState extends ConsumerState<MainMap>
     with TickerProviderStateMixin {
   final String styleUrl =
-      "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png";
-  final String apiKey = "20afebe9-0d8a-41a3-8ae4-5c3b35dc8d08";
+      "https://api.mapbox.com/styles/v1/tuudug/clid418pj001w01r0fhs8fptu/tiles/256/{z}/{x}/{y}@2x?access_token=pk.eyJ1IjoidHV1ZHVnIiwiYSI6ImNsaWN6ZHBtaTBvZmIzc28ybmt2eWNldmEifQ.AxQ4iSKGHr34_zSbxw-4kA";
 
   bool _dialogOpen = false;
   bool isMyLocationWatcherSetup = false;
@@ -50,11 +54,12 @@ class _MainMapState extends ConsumerState<MainMap>
   final locations = FirebaseDatabase.instance.ref('locations');
   late final _mapController = AnimatedMapController(vsync: this);
 
-  final List<Marker> _markers = [];
+  final List<Marker> _friendMarkers = [];
+  final List<Marker> _placeMarkers = [];
 
   _setupLocationWatcher() {
     locations.onValue.listen((DatabaseEvent event) {
-      _updateMarkers();
+      _updateFriendMarkers();
     });
   }
 
@@ -82,7 +87,7 @@ class _MainMapState extends ConsumerState<MainMap>
     }
   }
 
-  _updateMarkers() {
+  _updateFriendMarkers() {
     locations.get().then((snapshot) => {
           snapshot.children.forEach((element) {
             final data = Map<String, dynamic>.from(element.value as Map);
@@ -91,11 +96,11 @@ class _MainMapState extends ConsumerState<MainMap>
             final user = ref.read(loggedInUserProvider);
             if (friends.contains(key) || key == user.id) {
               bool found = false;
-              for (int i = 0; i < _markers.length; i++) {
-                if (_markers[i].key == Key(key)) {
+              for (int i = 0; i < _friendMarkers.length; i++) {
+                if (_friendMarkers[i].key == Key(key)) {
                   found = true;
                   setState(() {
-                    _markers[i] = Marker(
+                    _friendMarkers[i] = Marker(
                       key: Key(key),
                       builder: (context) {
                         if (key == user.id) {
@@ -181,7 +186,7 @@ class _MainMapState extends ConsumerState<MainMap>
               }
               if (found != true) {
                 setState(() {
-                  _markers.add(Marker(
+                  _friendMarkers.add(Marker(
                     key: Key(key),
                     builder: (context) {
                       return FlutterLogo(size: 80);
@@ -199,7 +204,115 @@ class _MainMapState extends ConsumerState<MainMap>
         });
   }
 
-  bool _isSideMenuOpen = false;
+  _loadPlaceMarkers() async {
+    List<Place> places = await PlacesDb.getAll();
+    for (int i = 0; i < places.length; i++) {
+      var placeTypeNumber;
+      var type = places[i].type;
+      type == "eatery"
+          ? placeTypeNumber = 0
+          : type == "meet"
+              ? placeTypeNumber = 1
+              : type == "party"
+                  ? placeTypeNumber = 2
+                  : placeTypeNumber = 3;
+      _placeMarkers.add(Marker(
+          point: LatLng(places[i].lat, places[i].long),
+          builder: (context) {
+            return GestureDetector(
+              onTap: () {
+                _goToCoords(places[i].lat, places[i].long);
+                showModalBottomSheet(
+                    barrierColor: Colors.black.withAlpha(1),
+                    context: context,
+                    builder: (context) {
+                      return SizedBox(
+                        height: 200,
+                        child: Card(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 4,
+                                child: Container(
+                                  color: Colors.grey[200],
+                                  child: Center(
+                                    child: Image.network(
+                                      'https://picsum.photos/200',
+                                      fit: BoxFit.fill,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 6,
+                                child: Container(
+                                  color: Colors.white,
+                                  child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            places[i].type == "eatery"
+                                                ? Icon(Icons.restaurant)
+                                                : places[i].type == "meet"
+                                                    ? Icon(Icons
+                                                        .meeting_room_rounded)
+                                                    : places[i].type == "party"
+                                                        ? Icon(
+                                                            Icons.celebration)
+                                                        : Icon(Icons
+                                                            .sports_esports),
+                                            Text(
+                                              " ${places[i].name}",
+                                              style: TextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        PillBadge(
+                                            badgeColor: Colors.purple,
+                                            textColor: Colors.white,
+                                            text: "Verified"),
+                                        SizedBox(height: 8),
+                                        ElevatedButton.icon(
+                                            onPressed: () {
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context) {
+                                                    return Dialog.fullscreen(
+                                                      child: Text(
+                                                          "Place more info todo"),
+                                                    );
+                                                  });
+                                            },
+                                            icon: Icon(Icons.expand_less),
+                                            label: Text("More Info"))
+                                      ]),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    });
+              },
+              child: Icon(
+                Icons.location_on,
+                color: Colors.purpleAccent,
+                size: ref.read(selectedPlaceTypeProvider) == placeTypeNumber
+                    ? 42
+                    : 0,
+              ),
+            );
+          }));
+    }
+  }
 
   Future<void> _displayTextInputDialog(BuildContext context) async {
     _dialogOpen = true;
@@ -247,7 +360,9 @@ class _MainMapState extends ConsumerState<MainMap>
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      locationStatus = "SERVICE_NOT_ENABLED";
+      setState(() {
+        locationStatus = "SERVICE_NOT_ENABLED";
+      });
       return;
     }
 
@@ -255,18 +370,24 @@ class _MainMapState extends ConsumerState<MainMap>
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission != LocationPermission.denied) {
-        locationStatus = "PERMISSION_NOT_GRANTED";
+        setState(() {
+          locationStatus = "PERMISSION_NOT_GRANTED";
+        });
         return;
       }
     }
 
-    locationStatus = "GRANTED";
+    setState(() {
+      locationStatus = "GRANTED";
+    });
     return;
   }
 
   @override
   void initState() {
+    super.initState();
     _checkLocationPermission();
+    _loadPlaceMarkers();
   }
 
   @override
@@ -303,112 +424,37 @@ class _MainMapState extends ConsumerState<MainMap>
             children: (locationStatus == "GRANTED")
                 ? ([
                     TileLayer(
-                      urlTemplate: '$styleUrl?api_key=$apiKey',
-                      tileProvider: FMTC.instance('mapStore').getTileProvider(),
-                    ),
+                        urlTemplate: styleUrl,
+                        tileProvider: FMTC.instance('mapStore').getTileProvider(
+                            FMTCTileProviderSettings(
+                                cachedValidDuration: const Duration(days: 31),
+                                maxStoreLength: 2000))),
                     CurrentLocationLayer(),
-                    MarkerLayer(markers: _markers),
+                    MarkerLayer(
+                        markers: ref.watch(selectedPlaceTypeProvider) == -1
+                            ? _friendMarkers
+                            : _placeMarkers),
                   ])
                 : [
                     TileLayer(
-                      urlTemplate: '$styleUrl?api_key=$apiKey',
-                      tileProvider: FMTC.instance('mapStore').getTileProvider(),
+                      urlTemplate: styleUrl,
+                      tileProvider: FMTC.instance('mapStore').getTileProvider(
+                          FMTCTileProviderSettings(
+                              cachedValidDuration: const Duration(days: 31),
+                              maxStoreLength: 2000)),
                     ),
-                    MarkerLayer(markers: _markers),
+                    MarkerLayer(
+                        markers: ref.watch(selectedPlaceTypeProvider) == -1
+                            ? _friendMarkers
+                            : _placeMarkers),
                   ],
             //markers: _markers.values.toSet(),
           ),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Color(0xFF8B5CF6),
-                width: 1,
-              ),
-            ),
-            margin: EdgeInsets.only(left: 8, top: 48),
-            child: IconButton(
-              color: Color(0xFF8B5CF6),
-              iconSize: 32,
-              icon: Icon(Icons.menu),
-              onPressed: () {},
-            ),
-          ),
-          Stack(
-            children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Color(0xFF8B5CF6),
-                      width: 1,
-                    ),
-                  ),
-                  margin: EdgeInsets.only(right: 8, top: 48),
-                  child: IconButton(
-                    color: Color(0xFF8B5CF6),
-                    iconSize: 32,
-                    icon: Icon(Icons.account_circle),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProfilePage(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Color(0xFF8B5CF6),
-                      width: 1,
-                    ),
-                  ),
-                  margin: EdgeInsets.only(right: 8, top: 48 + 56),
-                  child: IconButton(
-                    color: Color(0xFF8B5CF6),
-                    iconSize: 32,
-                    icon: Icon(Icons.group),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FriendsPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Color(0xFF8B5CF6),
-                      width: 1,
-                    ),
-                  ),
-                  margin: EdgeInsets.only(right: 8, top: 48 + 56 + 56),
-                  child: IconButton(
-                    color: Color(0xFF8B5CF6),
-                    iconSize: 32,
-                    icon: Icon(Icons.explore),
-                    onPressed: () {},
-                  ),
-                ),
-              ),
-            ],
-          ),
+          SafeArea(
+              child: Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: PlaceTypeButtons(),
+          )),
           Positioned(
             top: 0,
             right: -10,
@@ -439,10 +485,57 @@ class _MainMapState extends ConsumerState<MainMap>
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _goToMe,
-        child: Icon(Icons.location_searching),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: Stack(
+        children: <Widget>[
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(48, 0, 0, 16),
+              child: FloatingActionButton(
+                heroTag: "friends",
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FriendsPage(),
+                    ),
+                  );
+                },
+                child: Icon(Icons.diversity_1),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 48),
+              child: FloatingActionButton(
+                heroTag: "gotome",
+                onPressed: _goToMe,
+                child: Icon(Icons.location_searching),
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 0, 48, 16),
+              child: FloatingActionButton(
+                heroTag: "profile",
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProfilePage(),
+                    ),
+                  );
+                },
+                child: Icon(Icons.account_circle),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -69,7 +69,7 @@ class FriendTimestampBoxState extends State<FriendTimestampBox>
                     widget.text,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
