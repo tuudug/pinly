@@ -28,6 +28,7 @@ import 'package:pinly/models/user.dart';
 import 'package:pinly/providers/user.dart';
 
 import '../models/place.dart';
+import '../widgets/main_map_toolbar.dart';
 import 'friends_page.dart';
 
 class MainMap extends ConsumerStatefulWidget {
@@ -405,6 +406,8 @@ class _MainMapState extends ConsumerState<MainMap>
         children: [
           FlutterMap(
             options: MapOptions(
+              interactiveFlags:
+                  InteractiveFlag.pinchZoom | InteractiveFlag.drag,
               maxZoom: 18.0,
               center: LatLng(47.9188, 106.9176),
               zoom: 12.4746,
@@ -453,7 +456,7 @@ class _MainMapState extends ConsumerState<MainMap>
           SafeArea(
               child: Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: PlaceTypeButtons(),
+            child: MainMapToolbar(),
           )),
           Positioned(
             top: 0,

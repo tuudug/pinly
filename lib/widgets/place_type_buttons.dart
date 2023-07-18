@@ -28,21 +28,21 @@ class PlaceTypeButtonsState extends ConsumerState<PlaceTypeButtons> {
             ButtonSegment<int>(
                 value: 0,
                 label: Text(
-                  "Eat",
+                  "Restaurant",
                   style: TextStyle(fontSize: textSize),
                 ),
                 icon: Icon(Icons.restaurant)),
             ButtonSegment<int>(
                 value: 1,
                 label: Text(
-                  "Meet",
+                  "Pub & Lounge",
                   style: TextStyle(fontSize: textSize),
                 ),
                 icon: Icon(Icons.book_rounded)),
             ButtonSegment<int>(
               value: 2,
               label: Text(
-                "Party",
+                "Coffee Shop",
                 style: TextStyle(fontSize: textSize),
               ),
               icon: Icon(Icons.celebration),
@@ -50,7 +50,15 @@ class PlaceTypeButtonsState extends ConsumerState<PlaceTypeButtons> {
             ButtonSegment<int>(
               value: 3,
               label: Text(
-                "Play",
+                "Book Store",
+                style: TextStyle(fontSize: textSize),
+              ),
+              icon: Icon(Icons.sports_esports),
+            ),
+            ButtonSegment<int>(
+              value: 4,
+              label: Text(
+                "Creative",
                 style: TextStyle(fontSize: textSize),
               ),
               icon: Icon(Icons.sports_esports),
