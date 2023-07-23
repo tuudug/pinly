@@ -26,4 +26,23 @@ class PlacesDb {
     });
     return result;
   }
+
+  static int getPlaceTypeNumber(String type) {
+    if (type == "eatery") {
+      return 0;
+    } else if (type == "coffeeshop") {
+      return 1;
+    } else if (type == "play") {
+      return 2;
+    } else if (type == "party") {
+      return 3;
+    } else if (type == "museum") {
+      return 4;
+    } else if (type == "gym") {
+      return 5;
+    } else if (type == "books") {
+      return 6;
+    }
+    return -1;
+  }
 }

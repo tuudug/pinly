@@ -29,6 +29,7 @@ import 'package:pinly/providers/user.dart';
 
 import '../models/place.dart';
 import '../widgets/main_map_toolbar.dart';
+import '../widgets/place_bottom_sheet.dart';
 import 'friends_page.dart';
 
 class MainMap extends ConsumerStatefulWidget {
@@ -208,15 +209,7 @@ class _MainMapState extends ConsumerState<MainMap>
   _loadPlaceMarkers() async {
     List<Place> places = await PlacesDb.getAll();
     for (int i = 0; i < places.length; i++) {
-      var placeTypeNumber;
-      var type = places[i].type;
-      type == "eatery"
-          ? placeTypeNumber = 0
-          : type == "meet"
-              ? placeTypeNumber = 1
-              : type == "party"
-                  ? placeTypeNumber = 2
-                  : placeTypeNumber = 3;
+      int placeTypeNumber = PlacesDb.getPlaceTypeNumber(places[i].type);
       _placeMarkers.add(Marker(
           point: LatLng(places[i].lat, places[i].long),
           builder: (context) {
@@ -227,80 +220,7 @@ class _MainMapState extends ConsumerState<MainMap>
                     barrierColor: Colors.black.withAlpha(1),
                     context: context,
                     builder: (context) {
-                      return SizedBox(
-                        height: 200,
-                        child: Card(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 4,
-                                child: Container(
-                                  color: Colors.grey[200],
-                                  child: Center(
-                                    child: Image.network(
-                                      'https://picsum.photos/200',
-                                      fit: BoxFit.fill,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 6,
-                                child: Container(
-                                  color: Colors.white,
-                                  child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            places[i].type == "eatery"
-                                                ? Icon(Icons.restaurant)
-                                                : places[i].type == "meet"
-                                                    ? Icon(Icons
-                                                        .meeting_room_rounded)
-                                                    : places[i].type == "party"
-                                                        ? Icon(
-                                                            Icons.celebration)
-                                                        : Icon(Icons
-                                                            .sports_esports),
-                                            Text(
-                                              " ${places[i].name}",
-                                              style: TextStyle(
-                                                fontSize: 24,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        PillBadge(
-                                            badgeColor: Colors.purple,
-                                            textColor: Colors.white,
-                                            text: "Verified"),
-                                        SizedBox(height: 8),
-                                        ElevatedButton.icon(
-                                            onPressed: () {
-                                              showDialog(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    return Dialog.fullscreen(
-                                                      child: Text(
-                                                          "Place more info todo"),
-                                                    );
-                                                  });
-                                            },
-                                            icon: Icon(Icons.expand_less),
-                                            label: Text("More Info"))
-                                      ]),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                      return PlaceBottomSheet();
                     });
               },
               child: Icon(

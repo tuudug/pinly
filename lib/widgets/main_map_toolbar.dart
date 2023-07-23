@@ -3,6 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pinly/colors.dart';
 import 'package:pinly/providers/selected_place_type_provider.dart';
 
+List<PlaceType> placeTypes = [
+  PlaceType(Icons.restaurant_outlined, "Restaurant", 0),
+  PlaceType(Icons.coffee_maker_outlined, "Coffee Shop", 1),
+  PlaceType(Icons.gamepad_outlined, "Entertainment", 2),
+  PlaceType(Icons.party_mode_outlined, "Party", 3),
+  PlaceType(Icons.museum_outlined, "Museum", 4),
+  PlaceType(Icons.sports_outlined, "Gym & Sports", 5),
+  PlaceType(Icons.book_outlined, "Library & Book Shop", 6),
+];
+
 class MainMapToolbar extends ConsumerStatefulWidget {
   const MainMapToolbar({
     Key? key,
@@ -72,7 +82,15 @@ class MainMapToolbarState extends ConsumerState<MainMapToolbar> {
                           width: 1.0,
                         ),
                       ),
-                      child: buildSearchBar(selectedPlaceType)),
+                      child: GestureDetector(
+                          onTap: () {
+                            if (morePlacesToggled == false) {
+                              setState(() {
+                                morePlacesToggled = true;
+                              });
+                            }
+                          },
+                          child: buildSearchBar(selectedPlaceType))),
                 ),
               ),
               Expanded(
@@ -117,38 +135,20 @@ class MainMapToolbarState extends ConsumerState<MainMapToolbar> {
               ),
             ],
           ),
-          AnimatedOpacity(
-            opacity: morePlacesToggled ? 1.0 : 0.0,
-            duration: Duration(milliseconds: 250),
-            child: Flex(
-              direction: Axis.horizontal,
-              children: [
-                Expanded(
-                    flex: 1,
-                    child: PlaceTypeButton(
-                      icon: Icons.restaurant,
-                      text: "Restaurant",
-                      id: 0,
-                    )),
-                Expanded(
-                    flex: 1,
-                    child: PlaceTypeButton(
-                        icon: Icons.weekend, text: "Pub & Lounge", id: 1)),
-                Expanded(
-                    flex: 1,
-                    child: PlaceTypeButton(
-                      icon: Icons.coffee,
-                      text: "Coffee Shop",
-                      id: 2,
-                    )),
-                Expanded(
-                    flex: 1,
-                    child: PlaceTypeButton(
-                      icon: Icons.gamepad,
-                      text: "Play",
-                      id: 3,
-                    )),
-              ],
+          SizedBox(
+            height: 40,
+            child: AnimatedOpacity(
+              opacity: morePlacesToggled ? 1.0 : 0.0,
+              duration: Duration(milliseconds: 250),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: List.generate(
+                    placeTypes.length,
+                    (index) => PlaceTypeButton(
+                        icon: placeTypes[index].icon,
+                        text: placeTypes[index].name,
+                        id: placeTypes[index].id)),
+              ),
             ),
           ),
         ],
@@ -245,18 +245,18 @@ class PlaceTypeSelectedIndicator extends ConsumerWidget {
 Widget buildSearchBar(int placeType) {
   if (placeType == -1) {
     return PlaceTypeSelectedIndicator(
-        icon: Icons.search, text: "Find a place", id: -1);
-  } else if (placeType == 0) {
-    return PlaceTypeSelectedIndicator(
-        icon: Icons.restaurant, text: "Restaurant", id: 0);
-  } else if (placeType == 1) {
-    return PlaceTypeSelectedIndicator(
-        icon: Icons.weekend, text: "Pub & Lounge", id: 1);
-  } else if (placeType == 2) {
-    return PlaceTypeSelectedIndicator(
-        icon: Icons.coffee, text: "Coffee Shop", id: 2);
-  } else if (placeType == 3) {
-    return PlaceTypeSelectedIndicator(icon: Icons.gamepad, text: "Play", id: 3);
+        icon: Icons.place_outlined, text: "Select a place", id: -1);
   }
-  return Text("Lol");
+  return PlaceTypeSelectedIndicator(
+      icon: placeTypes[placeType].icon,
+      text: placeTypes[placeType].name,
+      id: placeTypes[placeType].id);
+}
+
+class PlaceType {
+  IconData icon;
+  String name;
+  int id;
+
+  PlaceType(this.icon, this.name, this.id);
 }
