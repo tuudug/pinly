@@ -16,15 +16,55 @@ class PlacesDb {
       final data = snapshot.docs;
       for (int i = 0; i < data.length; i++) {
         final currentData = data[i].data();
-        log(currentData['name']);
         result.add(Place(
-            lat: currentData['lat'],
-            long: currentData['long'],
-            name: currentData['name'],
-            type: currentData['type']));
+          id: data[i].id,
+          lat: currentData['lat'],
+          long: currentData['long'],
+          name: currentData['name'],
+          type: currentData['type'],
+          slogan: currentData['slogan'] ?? "",
+          phone: currentData['phone'] ?? "",
+          schedule: currentData['schedule'] ?? "",
+        ));
       }
     });
     return result;
+  }
+
+  static Future<Place> getOne(String id) async {
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+    final place = await db.collection("places").doc(id).get();
+    return Place(
+        id: id,
+        lat: place['lat'],
+        long: place['long'],
+        name: place['name'],
+        type: place['type'],
+        slogan: place['slogan'],
+        phone: place['phone'],
+        schedule: place['schedule']);
+  }
+
+  static Future<String> getFirstPicture(String id) async {
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+    final place = await db.collection("places").doc(id).get();
+    final data = place.data() as Map<String, dynamic>;
+    if (data.toString().contains("images")) {
+      if (data['images'][0] != null) {
+        return data['images'][0];
+      }
+    }
+    return "none";
+  }
+
+  static Future<List<String>?> getAllPictures(String id) async {
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+    final place = await db.collection("places").doc(id).get();
+    final data = place.data() as Map<String, dynamic>;
+    if (data.toString().contains("images")) {
+      return List<String>.from(data['images']);
+    }
+    return null;
   }
 
   static int getPlaceTypeNumber(String type) {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pinly/colors.dart';
+import 'package:pinly/constants.dart';
 import 'package:pinly/providers/selected_place_type_provider.dart';
 
 List<PlaceType> placeTypes = [

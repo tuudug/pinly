@@ -2,7 +2,7 @@ import 'package:cherry_toast/cherry_toast.dart';
 import 'package:cherry_toast/resources/arrays.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:pinly/colors.dart';
+import 'package:pinly/constants.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart' as spi;
 
 import '../widgets/place_features.dart';
@@ -28,19 +28,30 @@ class _PlacePageState extends State<PlacePage> with TickerProviderStateMixin {
     PageController cardController = PageController();
     TabController tabController = TabController(length: 2, vsync: this);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Place"),
-        actions: [
-          TextButton.icon(
-              onPressed: () {},
-              icon: Icon(Icons.favorite_outline),
-              label: Text("0"))
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    return SafeArea(
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          iconTheme: IconThemeData(
+            size: 30,
+            color: Colors.white,
+          ),
+          backgroundColor: Colors.transparent,
+          actions: [
+            TextButton.icon(
+                onPressed: () {},
+                icon: Icon(
+                  Icons.favorite_outline,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  "0",
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w800),
+                ))
+          ],
+        ),
+        body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
@@ -48,10 +59,8 @@ class _PlacePageState extends State<PlacePage> with TickerProviderStateMixin {
               flex: 1,
               child: ClipRRect(
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(40),
-                  topRight: Radius.circular(40),
-                  bottomLeft: Radius.circular(10),
-                  bottomRight: Radius.circular(10),
+                  bottomLeft: Radius.circular(65),
+                  bottomRight: Radius.circular(65),
                 ),
                 child: Stack(alignment: Alignment.center, children: [
                   PageView.builder(
@@ -80,7 +89,7 @@ class _PlacePageState extends State<PlacePage> with TickerProviderStateMixin {
             Expanded(
                 flex: 3,
                 child: Padding(
-                  padding: const EdgeInsets.all(2.0),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                   child: Column(
                     children: [
                       Row(

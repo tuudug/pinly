@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pinly/colors.dart';
+import 'package:pinly/constants.dart';
 
 class PlaceFeatures extends StatelessWidget {
   @override

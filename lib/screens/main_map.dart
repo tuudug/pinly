@@ -220,7 +220,12 @@ class _MainMapState extends ConsumerState<MainMap>
                     barrierColor: Colors.black.withAlpha(1),
                     context: context,
                     builder: (context) {
-                      return PlaceBottomSheet();
+                      return PlaceBottomSheet(
+                        id: places[i].id,
+                        name: places[i].name,
+                        slogan: places[i].slogan ?? "",
+                        schedule: places[i].schedule ?? "",
+                      );
                     });
               },
               child: Icon(
@@ -328,7 +333,7 @@ class _MainMapState extends ConsumerState<MainMap>
             options: MapOptions(
               interactiveFlags:
                   InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-              maxZoom: 18.0,
+              maxZoom: 17.0,
               center: LatLng(47.9188, 106.9176),
               zoom: 12.4746,
               onPositionChanged: (position, hasGesture) {
@@ -388,7 +393,7 @@ class _MainMapState extends ConsumerState<MainMap>
                 opacity: _zoomValue > 10.0 ? 0.5 : 0.0,
                 child: SfSlider.vertical(
                   min: 10.0,
-                  max: 18.0,
+                  max: 17.0,
                   value: _zoomValue,
                   interval: 20,
                   showTicks: false,
@@ -489,7 +494,7 @@ class _MainMapState extends ConsumerState<MainMap>
 
   Future<void> _goToCoords(double lat, double long) async {
     await _mapController.animateTo(
-        dest: LatLng(lat, long), zoom: 17.4748, rotation: 0);
+        dest: LatLng(lat, long), zoom: 17.0, rotation: 0);
   }
 
   Future<void> _startingZoom() async {

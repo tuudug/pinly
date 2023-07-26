@@ -5,6 +5,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:pinly/screens/home_page.dart';
 import 'package:pinly/screens/phone_verify.dart';
 import 'package:flutter_map_tile_caching/flutter_map_tile_caching.dart';
@@ -38,8 +39,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
+        textTheme: GoogleFonts.nunitoTextTheme(),
         useMaterial3: true,
-        fontFamily: "Sk-Modernist",
         primarySwatch: Colors.deepPurple,
       ),
       home: const TryToLoginPage(),
