@@ -30,4 +30,37 @@ class UserDb {
 
     await db.collection("users").doc(user_uid).update({"username": username});
   }
+
+  static Future<void> likeOrUnlikePlace(String placeId) async {
+    const FlutterSecureStorage storage = FlutterSecureStorage();
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+
+    String? userUid = await storage.read(key: "user_uid");
+    final user = await db.collection("users").doc(userUid).get();
+    final userData = user.data() as Map<String, dynamic>;
+
+    final likedPlaces =
+        userData.containsKey('liked_places') ? userData['liked_places'] : [];
+    if (likedPlaces.contains(placeId)) {
+      likedPlaces.remove(placeId);
+    } else {
+      likedPlaces.add(placeId);
+    }
+    await db
+        .collection("users")
+        .doc(userUid)
+        .update({'liked_places': likedPlaces});
+  }
+
+  static Future<List<String>> getMyLikedPlaces() async {
+    const FlutterSecureStorage storage = FlutterSecureStorage();
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+    String? userId = await storage.read(key: "user_uid");
+    final user = await db.collection("users").doc(userId).get();
+    final userData = user.data() as Map<String, dynamic>;
+    if (!userData.containsKey('liked_places')) {
+      return [];
+    }
+    return List<String>.from(userData['liked_places']);
+  }
 }

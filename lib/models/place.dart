@@ -7,6 +7,7 @@ class Place {
   final String? slogan;
   final String? phone;
   final String? schedule;
+  final int? likeCount;
 
   Place({
     required this.id,
@@ -17,6 +18,7 @@ class Place {
     this.slogan,
     this.phone,
     this.schedule,
+    this.likeCount,
   });
 
   const Place.empty({
@@ -28,5 +30,6 @@ class Place {
     this.slogan = "",
     this.phone = "",
     this.schedule = "",
+    this.likeCount = 0,
   });
 }

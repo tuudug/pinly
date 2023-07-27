@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:pinly/constants.dart';
 import 'package:pinly/firestore/places.dart';
@@ -51,30 +52,24 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                             if (!snapshot.hasData) {
                               return CircularProgressIndicator();
                             } else if (snapshot.data == "none") {
-                              return Image.network(
-                                notFoundImage,
+                              return CachedNetworkImage(
+                                imageUrl: notFoundImage,
+                                placeholder: (context, url) => Center(
+                                    child: SizedBox(
+                                        height: 30,
+                                        width: 30,
+                                        child: CircularProgressIndicator())),
                                 fit: BoxFit.cover,
                               );
                             }
                             return Expanded(
-                              child: Image.network(
-                                snapshot.data!,
-                                loadingBuilder:
-                                    (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      value: (loadingProgress != null)
-                                          ? (loadingProgress
-                                                  .cumulativeBytesLoaded /
-                                              loadingProgress
-                                                  .expectedTotalBytes!
-                                                  .toInt())
-                                          : 0,
-                                    ),
-                                  );
-                                },
+                              child: CachedNetworkImage(
+                                imageUrl: snapshot.data!,
+                                placeholder: (context, url) => Center(
+                                    child: SizedBox(
+                                        height: 30,
+                                        width: 30,
+                                        child: CircularProgressIndicator())),
                                 width: double.infinity,
                                 fit: BoxFit.fitWidth,
                               ),
@@ -145,7 +140,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => PlacePage(),
+                                    builder: (context) => PlacePage(widget.id),
                                   ),
                                 );
                               },
