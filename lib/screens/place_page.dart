@@ -9,6 +9,7 @@ import 'package:pinly/firestore/places.dart';
 import 'package:pinly/widgets/place_like.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart' as spi;
 
+import '../widgets/no_entries.dart';
 import '../widgets/place_features.dart';
 
 class PlacePage extends StatefulWidget {
@@ -226,29 +227,10 @@ class _PlacePageState extends State<PlacePage> with TickerProviderStateMixin {
                                           const EdgeInsets.fromLTRB(8, 8, 8, 0),
                                       child: PlaceFeatures(),
                                     ),
-                                    Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons
-                                                .star_border, // Replace this with your desired icon
-                                            size: 72.0,
-                                            color: Colors.grey,
-                                          ),
-                                          SizedBox(height: 16.0),
-                                          Text(
-                                            'No reviews yet',
-                                            style: TextStyle(
-                                              fontSize: 24.0,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                    NoEntries(
+                                      text: "No reviews yet",
+                                      icon: Icons.star_border,
+                                    )
                                   ]),
                             )
                           ],

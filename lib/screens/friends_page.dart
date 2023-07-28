@@ -3,9 +3,11 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pinly/providers/user.dart';
+import 'package:pinly/widgets/add_friend_bottom_sheet.dart';
 
 import '../firestore/friends.dart';
 import '../models/user.dart';
+import '../widgets/no_entries.dart';
 
 class FriendsPage extends ConsumerStatefulWidget {
   @override
@@ -15,13 +17,11 @@ class FriendsPage extends ConsumerStatefulWidget {
 class _FriendsPageState extends ConsumerState<FriendsPage> {
   Future<List<UserAccount>> friends = FriendsDb.getFriends();
   Future<List<UserAccount>> friendRequests = FriendsDb.getFriendRequests();
-  Future<List<UserAccount>> everyone = FriendsDb.getEveryone();
 
   _refresh() async {
     setState(() {
       friends = FriendsDb.getFriends();
       friendRequests = FriendsDb.getFriendRequests();
-      everyone = FriendsDb.getEveryone();
     });
     UserAccount user = ref.read(loggedInUserProvider);
     List<UserAccount> refreshedFriends = await friends;
@@ -40,22 +40,35 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("My Friends"),
-      ),
-      body: DefaultTabController(
-        length: 3,
-        child: Column(
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const TabBar(
+            dividerColor: Colors.transparent,
+            labelColor: Colors.black,
+            padding: EdgeInsets.symmetric(horizontal: 72),
+            tabs: [
+              Tab(icon: Icon(Icons.people)),
+              Tab(icon: Icon(Icons.group_add)),
+            ],
+          ),
+          actions: [
+            IconButton(
+                onPressed: () {
+                  showModalBottomSheet(
+                      isScrollControlled: true,
+                      showDragHandle: true,
+                      context: context,
+                      builder: (context) {
+                        return AddFriendBottomSheet();
+                      });
+                },
+                icon: Icon(Icons.person_add))
+          ],
+        ),
+        body: Column(
           children: [
-            const TabBar(
-              labelColor: Colors.black,
-              tabs: [
-                Tab(icon: Icon(Icons.people), text: "Friends"),
-                Tab(icon: Icon(Icons.group_add), text: "Requests"),
-                Tab(icon: Icon(Icons.groups), text: "Everyone"),
-              ],
-            ),
             Expanded(
               child: TabBarView(
                 children: [
@@ -66,36 +79,52 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
                       if (!snapshot.hasData) {
                         return Center(child: CircularProgressIndicator());
                       } else {
-                        return ListView.builder(
-                          itemCount: snapshot.data?.length,
-                          itemBuilder: (context, index) {
-                            return Card(
-                                child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundImage:
-                                    NetworkImage('https://picsum.photos/200'),
-                              ),
-                              title: Text(snapshot.data?[index].username ?? ""),
-                              subtitle: Text("Status: idk tbh"),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextButton(
-                                    onPressed: () async {
-                                      await FriendsDb.removeFriend(
-                                          snapshot.data![index].id);
-                                      _refresh();
-                                    },
-                                    child: Text(
-                                      "Unfriend",
-                                      style: TextStyle(color: Colors.red),
+                        return snapshot.data?.length != 0
+                            ? NoEntries(
+                                text: "No friends added",
+                                icon: Icons.group,
+                                buttonText: "Add friend",
+                                buttonAction: () {
+                                  showModalBottomSheet(
+                                      isScrollControlled: true,
+                                      showDragHandle: true,
+                                      context: context,
+                                      builder: (context) {
+                                        return AddFriendBottomSheet();
+                                      });
+                                },
+                              )
+                            : ListView.builder(
+                                itemCount: snapshot.data?.length,
+                                itemBuilder: (context, index) {
+                                  return Card(
+                                      child: ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage: NetworkImage(
+                                          'https://picsum.photos/200'),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ));
-                          },
-                        );
+                                    title: Text(
+                                        snapshot.data?[index].username ?? ""),
+                                    subtitle: Text("Status: idk tbh"),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () async {
+                                            await FriendsDb.removeFriend(
+                                                snapshot.data![index].id);
+                                            _refresh();
+                                          },
+                                          child: Text(
+                                            "Unfriend",
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ));
+                                },
+                              );
                       }
                     },
                   ),
@@ -107,157 +136,56 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
                         if (!snapshot.hasData) {
                           return Center(child: CircularProgressIndicator());
                         } else {
-                          return ListView.builder(
-                            itemCount: snapshot.data?.length,
-                            itemBuilder: (context, index) {
-                              return Card(
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundImage: NetworkImage(
-                                        'https://picsum.photos/200'),
-                                  ),
-                                  title: Text(
-                                      snapshot.data?[index].username ?? ""),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      TextButton(
-                                        onPressed: () async {
-                                          await FriendsDb.acceptFriend(
-                                              snapshot.data![index].id);
-                                          _refresh();
-                                        },
-                                        child: Text(
-                                          "Accept",
-                                          style: TextStyle(color: Colors.green),
+                          return snapshot.data?.length == 0
+                              ? NoEntries(
+                                  text: "No friend requests",
+                                  icon: Icons.groups_2,
+                                )
+                              : ListView.builder(
+                                  itemCount: snapshot.data?.length,
+                                  itemBuilder: (context, index) {
+                                    return Card(
+                                      child: ListTile(
+                                        leading: CircleAvatar(
+                                          backgroundImage: NetworkImage(
+                                              'https://picsum.photos/200'),
                                         ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () async {
-                                          await FriendsDb.denyFriend(
-                                              snapshot.data![index].id);
-                                          _refresh();
-                                        },
-                                        child: Text(
-                                          "Decline",
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      }),
-                  FutureBuilder(
-                      future: Future.wait([everyone, friends, friendRequests]),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return Center(child: CircularProgressIndicator());
-                        } else {
-                          return ListView.builder(
-                            itemCount: snapshot.data?[0].length,
-                            itemBuilder: (context, index) {
-                              bool friends = false;
-                              bool requestReceived = false;
-                              bool requestSent = false;
-                              String currentUserId =
-                                  snapshot.data?[0][index].id ?? "";
-                              for (int j = 0;
-                                  j < (snapshot.data?[1].length as int);
-                                  j++) {
-                                if (snapshot.data?[0][index].id ==
-                                    snapshot.data?[1][j].id) {
-                                  friends = true;
-                                }
-                              }
-                              for (int j = 0;
-                                  j < (snapshot.data?[2].length as int);
-                                  j++) {
-                                if (snapshot.data?[0][index].id ==
-                                    snapshot.data?[2][j].id) {
-                                  requestReceived = true;
-                                }
-                              }
-                              for (int j = 0;
-                                  j <
-                                      (snapshot.data?[0][index].friendRequests
-                                          .length as int);
-                                  j++) {
-                                if (ref.read(loggedInUserProvider).id ==
-                                    snapshot
-                                        .data?[0][index].friendRequests[j]) {
-                                  requestSent = true;
-                                }
-                              }
-                              return Card(
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundImage: NetworkImage(
-                                        'https://picsum.photos/200'),
-                                  ),
-                                  title: Text(
-                                      snapshot.data?[0][index].username ?? ""),
-                                  subtitle:
-                                      Text(snapshot.data?[0][index].id ?? ""),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      !friends &&
-                                              !requestReceived &&
-                                              !requestSent
-                                          ? TextButton(
+                                        title: Text(
+                                            snapshot.data?[index].username ??
+                                                ""),
+                                        trailing: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            TextButton(
                                               onPressed: () async {
-                                                await FriendsDb.addFriend(
-                                                    currentUserId);
+                                                await FriendsDb.acceptFriend(
+                                                    snapshot.data![index].id);
                                                 _refresh();
                                               },
-                                              child: const Text(
-                                                "Add Friend",
+                                              child: Text(
+                                                "Accept",
                                                 style: TextStyle(
                                                     color: Colors.green),
                                               ),
-                                            )
-                                          : requestReceived && !requestSent
-                                              ? TextButton(
-                                                  onPressed: () {
-                                                    // Accept friend request
-                                                  },
-                                                  child: const Text(
-                                                    "Request received",
-                                                    style: TextStyle(
-                                                        color: Colors.grey),
-                                                  ),
-                                                )
-                                              : requestSent
-                                                  ? TextButton(
-                                                      onPressed: () {
-                                                        // Accept friend request
-                                                      },
-                                                      child: const Text(
-                                                        "Request sent",
-                                                        style: TextStyle(
-                                                            color: Colors.grey),
-                                                      ),
-                                                    )
-                                                  : TextButton(
-                                                      onPressed: () {
-                                                        // Accept friend request
-                                                      },
-                                                      child: const Text(
-                                                        "Friends",
-                                                        style: TextStyle(
-                                                            color: Colors.grey),
-                                                      ),
-                                                    ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          );
+                                            ),
+                                            TextButton(
+                                              onPressed: () async {
+                                                await FriendsDb.denyFriend(
+                                                    snapshot.data![index].id);
+                                                _refresh();
+                                              },
+                                              child: Text(
+                                                "Decline",
+                                                style: TextStyle(
+                                                    color: Colors.red),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
                         }
                       }),
                 ],
