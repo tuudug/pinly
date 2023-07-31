@@ -90,6 +90,42 @@ class FriendsDb {
         .update({"friend_requests": userFriendRequsts});
   }
 
+  static Future<bool> addFriendByPhoneNumber(String phoneNumber) async {
+    const FlutterSecureStorage storage = FlutterSecureStorage();
+    final FirebaseFirestore db = FirebaseFirestore.instance;
+    String? user_uid = await storage.read(key: "user_uid");
+
+    final query = await db
+        .collection("users")
+        .where("phone_number", isEqualTo: phoneNumber)
+        .get();
+
+    if (query.size == 0) {
+      //if query returns 0 results
+      return false;
+    } else if (query.docs[0]['uid'] == user_uid) {
+      //if trying to add themselves
+      return false;
+    } else {
+      final friends = await getFriends();
+      for (int i = 0; i < friends.length; i++) {
+        if (query.docs[0]['uid'] == friends[i].id) {
+          //if already friends
+          return false;
+        }
+      }
+      final requests = await getFriendRequests();
+      for (int i = 0; i < requests.length; i++) {
+        if (query.docs[0]['uid'] == requests[i].id) {
+          //if already received request
+          return false;
+        }
+      }
+      await addFriend(query.docs[0]['uid']);
+      return true;
+    }
+  }
+
   static Future<void> removeFriend(String recipientUserId) async {
     const FlutterSecureStorage storage = FlutterSecureStorage();
     final FirebaseFirestore db = FirebaseFirestore.instance;

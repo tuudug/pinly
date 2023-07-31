@@ -79,7 +79,7 @@ class _FriendsPageState extends ConsumerState<FriendsPage> {
                       if (!snapshot.hasData) {
                         return Center(child: CircularProgressIndicator());
                       } else {
-                        return snapshot.data?.length != 0
+                        return snapshot.data?.length == 0
                             ? NoEntries(
                                 text: "No friends added",
                                 icon: Icons.group,
