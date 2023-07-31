@@ -7,6 +7,7 @@ import 'package:pinly/firestore/user.dart';
 import 'package:pinly/models/user.dart';
 import 'package:pinly/providers/user.dart';
 import 'package:pinly/screens/main_map.dart';
+import 'package:pinly/try_to_login.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -170,7 +171,7 @@ class _OtpPageState extends ConsumerState<OtpPage>
         enteredCode = "";
         Navigator.pushReplacement(context,
             MaterialPageRoute(builder: (BuildContext context) {
-          return MainMap();
+          return TryToLoginPage();
         }));
       });
     });
