@@ -384,6 +384,20 @@ class _MainMapState extends ConsumerState<MainMap>
             child: MainMapToolbar(),
           )),
           Positioned(
+              bottom: 100,
+              child: Container(
+                color: Colors.red.withOpacity(0.8),
+                height: 40,
+                width: MediaQuery.of(context).size.width,
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Text(
+                    "DEVELOPMENT BUILD 2023-08-08 19:01:45+Z08:00",
+                    style: TextStyle(color: Colors.white),
+                  )
+                ]),
+              )),
+          Positioned(
             top: 0,
             right: -10,
             bottom: 0,
