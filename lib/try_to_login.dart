@@ -100,9 +100,9 @@ class _TryToLoginPageState extends ConsumerState<TryToLoginPage> {
   }
 
   _checkEverything() async {
-    if (await _checkLocationPermission() == false) {
-      return;
-    }
+    //if (await _checkLocationPermission() == false) {
+    //  return;
+    //}
     await _tryToLogin();
   }
 

@@ -19,6 +19,7 @@ import 'package:pinly/widgets/friend_profile.dart';
 import 'package:pinly/widgets/friend_timestamp_box.dart';
 import 'package:pinly/widgets/pill_badge.dart';
 import 'package:pinly/widgets/place_type_buttons.dart';
+import 'package:pinly/widgets/profile_bottom_sheet.dart';
 import 'package:pinly/widgets/pulsating_circle.dart';
 import 'package:relative_time/relative_time.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
@@ -351,12 +352,12 @@ class _MainMapState extends ConsumerState<MainMap>
             mapController: _mapController,
             children: (locationStatus == "GRANTED")
                 ? ([
-                    TileLayer(
+                    /*TileLayer(
                         urlTemplate: styleUrl,
                         tileProvider: FMTC.instance('mapStore').getTileProvider(
                             FMTCTileProviderSettings(
                                 cachedValidDuration: const Duration(days: 31),
-                                maxStoreLength: 2000))),
+                                maxStoreLength: 2000))),*/
                     CurrentLocationLayer(),
                     MarkerLayer(
                         markers: ref.watch(selectedPlaceTypeProvider) == -1
@@ -364,13 +365,13 @@ class _MainMapState extends ConsumerState<MainMap>
                             : _placeMarkers),
                   ])
                 : [
-                    TileLayer(
+                    /*TileLayer(
                       urlTemplate: styleUrl,
                       tileProvider: FMTC.instance('mapStore').getTileProvider(
                           FMTCTileProviderSettings(
                               cachedValidDuration: const Duration(days: 31),
                               maxStoreLength: 2000)),
-                    ),
+                    ),*/
                     MarkerLayer(
                         markers: ref.watch(selectedPlaceTypeProvider) == -1
                             ? _friendMarkers
@@ -392,7 +393,7 @@ class _MainMapState extends ConsumerState<MainMap>
                 child:
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text(
-                    "DEVELOPMENT BUILD 2023-08-08 19:01:45+Z08:00",
+                    "DEVELOPMENT BUILD undefined",
                     style: TextStyle(color: Colors.white),
                   )
                 ]),
@@ -466,14 +467,18 @@ class _MainMapState extends ConsumerState<MainMap>
               child: FloatingActionButton(
                 heroTag: "profile",
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ProfilePage(),
-                    ),
-                  );
+                  showModalBottomSheet(
+                      showDragHandle: true,
+                      context: context,
+                      builder: (context) {
+                        return Container(
+                          decoration: BoxDecoration(color: Colors.transparent),
+                          height: MediaQuery.of(context).size.height * 0.5,
+                          child: ProfileBottomSheet(),
+                        );
+                      });
                 },
-                child: Icon(Icons.account_circle),
+                child: Icon(Icons.menu),
               ),
             ),
           ),

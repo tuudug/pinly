@@ -61,6 +61,7 @@ dependencies:
   cached_network_image: ^3.2.3
   app_settings: ^5.0.0
   focus_detector: ^2.0.1
+  iconsax: ^0.0.8
 
 dev_dependencies:
   flutter_test:
