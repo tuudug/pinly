@@ -254,7 +254,7 @@ class _MainMapState extends ConsumerState<MainMap>
               content: TextField(
                 onChanged: (value) {},
                 controller: _usernameController,
-                decoration: InputDecoration(hintText: ""),
+                decoration: InputDecoration(hintText: "Input your name here"),
               ),
               actions: [
                 FilledButton(
